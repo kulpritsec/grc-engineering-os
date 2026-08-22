@@ -6,12 +6,20 @@ from rich.console import Console
 from rich.table import Table
 
 from .doctor import collect_doctor, human_bytes
+from .evidence import verify_evidence_file
 
 app = typer.Typer(
     name="grcctl",
     help="GRC Engineering OS control and assurance CLI.",
     no_args_is_help=True,
 )
+
+evidence_app = typer.Typer(
+    help="Create and validate assurance evidence.",
+    no_args_is_help=True,
+)
+
+app.add_typer(evidence_app, name="evidence")
 
 console = Console()
 
@@ -22,6 +30,11 @@ OutputPath = Annotated[
         "-o",
         help="Evidence output path.",
     ),
+]
+
+EvidencePath = Annotated[
+    Path,
+    typer.Argument(help="Evidence file to verify."),
 ]
 
 
@@ -73,4 +86,42 @@ def doctor(
         return
 
     console.print("\n[bold red]Status: NOT READY[/bold red]")
+    raise typer.Exit(code=1)
+
+
+@evidence_app.command("verify")
+def evidence_verify(path: EvidencePath) -> None:
+    """Verify evidence structure and cryptographic integrity."""
+    result = verify_evidence_file(path)
+
+    table = Table(title="GRC Engineering OS — Evidence Verification")
+    table.add_column("Test", style="cyan")
+    table.add_column("Result")
+
+    schema_status = (
+        "[green]valid[/green]" if result.schema_valid else "[red]invalid[/red]"
+    )
+    integrity_status = (
+        "[green]valid[/green]" if result.integrity_valid else "[red]invalid[/red]"
+    )
+
+    table.add_row("Evidence file", result.evidence_path)
+    table.add_row("Schema", schema_status)
+    table.add_row("Integrity", integrity_status)
+    table.add_row("Stored hash", result.stored_hash or "unavailable")
+    table.add_row(
+        "Calculated hash",
+        result.calculated_hash or "unavailable",
+    )
+
+    console.print(table)
+
+    if result.valid:
+        console.print("\n[bold green]Status: VERIFIED[/bold green]")
+        return
+
+    if result.error:
+        console.print(f"\n[red]{result.error}[/red]")
+
+    console.print("[bold red]Status: VERIFICATION FAILED[/bold red]")
     raise typer.Exit(code=1)

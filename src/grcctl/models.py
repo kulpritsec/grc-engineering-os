@@ -35,3 +35,13 @@ class DoctorEvidence(BaseModel):
     ready: bool
     provenance: dict[str, str]
     evidence_hash: str = Field(default="")
+
+
+class EvidenceVerification(BaseModel):
+    evidence_path: str
+    schema_valid: bool
+    integrity_valid: bool
+    valid: bool
+    stored_hash: str | None = None
+    calculated_hash: str | None = None
+    error: str | None = None
