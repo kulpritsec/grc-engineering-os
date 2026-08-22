@@ -10,3 +10,12 @@ htmlcov/
 # Python-generated files
 __pycache__/
 *.py[cod]
+
+# Terraform/OpenTofu generated and sensitive artifacts
+**/.terraform/
+*.tfplan
+plan.json
+*.tfstate
+*.tfstate.*
+crash.log
+**/tfplan
