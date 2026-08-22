@@ -1,0 +1,12 @@
+
+# GRC Engineering OS generated artifacts
+evidence/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Python-generated files
+__pycache__/
+*.py[cod]
