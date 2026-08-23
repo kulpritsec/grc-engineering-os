@@ -1,7 +1,7 @@
 [project]
 name = "grcctl"
-version = "0.1.0"
-description = "Add your description here"
+version = "0.1.0a2"
+description = "Debian-based GRC engineering and executable-assurance platform."
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
