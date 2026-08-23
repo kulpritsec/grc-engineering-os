@@ -125,3 +125,81 @@ def evidence_verify(path: EvidencePath) -> None:
 
     console.print("[bold red]Status: VERIFICATION FAILED[/bold red]")
     raise typer.Exit(code=1)
+
+
+scan_app = typer.Typer(
+    help="Assess infrastructure and technical artifacts.",
+    no_args_is_help=True,
+)
+
+app.add_typer(scan_app, name="scan")
+
+TerraformPlanPath = Annotated[
+    Path,
+    typer.Argument(help="Terraform/OpenTofu JSON plan to assess."),
+]
+
+FailOnFindings = Annotated[
+    bool,
+    typer.Option(
+        "--fail-on-findings",
+        help="Return exit code 1 when findings are detected.",
+    ),
+]
+
+
+@scan_app.command("terraform")
+def scan_terraform(
+    plan: TerraformPlanPath,
+    output: OutputPath = Path("evidence/terraform-assessment.json"),
+    fail_on_findings: FailOnFindings = False,
+) -> None:
+    """Assess a Terraform/OpenTofu JSON plan."""
+    from .plugins.tf_assure import (
+        TerraformPlanError,
+        scan_terraform_plan,
+    )
+
+    try:
+        assessment = scan_terraform_plan(plan, output)
+    except (OSError, TerraformPlanError) as exc:
+        console.print(f"[bold red]Assessment failed:[/bold red] {exc}")
+        raise typer.Exit(code=2) from exc
+
+    table = Table(title="GRC Engineering OS — Terraform Assurance")
+    table.add_column("Severity")
+    table.add_column("Rule", style="cyan")
+    table.add_column("Resource")
+    table.add_column("Finding")
+
+    styles = {
+        "critical": "bold red",
+        "high": "red",
+        "medium": "yellow",
+        "low": "blue",
+    }
+
+    for finding in assessment.findings:
+        style = styles.get(finding.severity, "white")
+        table.add_row(
+            f"[{style}]{finding.severity.upper()}[/{style}]",
+            finding.rule_id,
+            finding.resource,
+            finding.title,
+        )
+
+    console.print(table)
+    console.print(
+        f"\nResources assessed: [bold]{assessment.summary.resources_scanned}[/bold]"
+    )
+    console.print(f"Findings: [bold]{assessment.summary.findings_total}[/bold]")
+    console.print(f"Evidence: [bold]{output}[/bold]")
+    console.print(f"SHA-256: [bold]{assessment.evidence_hash}[/bold]")
+
+    if assessment.findings:
+        console.print("\n[bold yellow]Status: FINDINGS DETECTED[/bold yellow]")
+        if fail_on_findings:
+            raise typer.Exit(code=1)
+        return
+
+    console.print("\n[bold green]Status: PASSED[/bold green]")
