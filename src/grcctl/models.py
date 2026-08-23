@@ -45,3 +45,38 @@ class EvidenceVerification(BaseModel):
     stored_hash: str | None = None
     calculated_hash: str | None = None
     error: str | None = None
+
+
+class ControlMapping(BaseModel):
+    framework: str
+    control_id: str
+
+
+class Finding(BaseModel):
+    rule_id: str
+    title: str
+    severity: str
+    resource: str
+    message: str
+    remediation: str
+    mappings: list[ControlMapping]
+    evidence: dict[str, object]
+
+
+class ScanSummary(BaseModel):
+    resources_scanned: int
+    findings_total: int
+    by_severity: dict[str, int]
+
+
+class TerraformScanEvidence(BaseModel):
+    schema_version: str = "0.1.0"
+    assessment_type: str = "terraform-plan-assessment"
+    collected_at: datetime
+    input_path: str
+    input_sha256: str
+    plan_format_version: str
+    scanner: dict[str, str]
+    summary: ScanSummary
+    findings: list[Finding]
+    evidence_hash: str = Field(default="")
