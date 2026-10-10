@@ -52,8 +52,10 @@ def _evidence_status(
 
     try:
         vault = LocalEvidenceVault(vault_root)
-        assert evidence.vault_artifact_id is not None
-        record = vault.get(evidence.vault_artifact_id)
+        artifact_id = evidence.vault_artifact_id
+        if artifact_id is None:
+            return "invalid_source"
+        record = vault.get(artifact_id)
         if record.sha256 != evidence.sha256 or record.kind != evidence.kind:
             return "metadata_mismatch"
         return vault.verify(record.artifact_id).status
