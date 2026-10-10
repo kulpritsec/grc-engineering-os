@@ -102,8 +102,7 @@ class LocalEvidenceVault:
                 """
             )
             db.execute(
-                "CREATE INDEX IF NOT EXISTS idx_artifact_digest "
-                "ON artifacts(sha256)"
+                "CREATE INDEX IF NOT EXISTS idx_artifact_digest ON artifacts(sha256)"
             )
 
     @contextmanager
@@ -185,7 +184,9 @@ class LocalEvidenceVault:
                     while chunk := reader.read(_CHUNK_BYTES):
                         size += len(chunk)
                         if size > max_bytes:
-                            raise VaultError("Artifact exceeds the configured size limit.")
+                            raise VaultError(
+                                "Artifact exceeds the configured size limit."
+                            )
                         digest.update(chunk)
                         staged.write(chunk)
                     staged.flush()
@@ -257,7 +258,5 @@ class LocalEvidenceVault:
 
     def verify(self, artifact_id: str) -> VaultCheck:
         artifact = self.get(artifact_id)
-        status, detail = self._inspect_object(
-            artifact.sha256, artifact.size_bytes
-        )
+        status, detail = self._inspect_object(artifact.sha256, artifact.size_bytes)
         return VaultCheck(artifact_id, artifact.sha256, status, detail)
