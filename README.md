@@ -72,6 +72,17 @@ uv run grcctl vault list
 uv run grcctl vault verify <ARTIFACT-UUID>
 ```
 
+## Persistent CVP evidence references
+
+The scoped assurance engine now accepts an Evidence Vault **artifact UUID** and
+expected SHA-256 and evidence kind, as an alternative to a local file path.
+The evaluator matches the Vault record and stored bytes before using an
+observation to support a bounded CVP result. It does not authenticate the
+artifact origin or provide a compliance certification.
+
+See [CVP and Evidence Vault integration](docs/CVP_VAULT_LINKS.md)
+for a synthetic end-to-end workflow and the negative-test cases.
+
 ## Requirements
 
 - Debian GNU/Linux 13 or another supported Linux environment
