@@ -90,9 +90,8 @@ def evaluate_assessment(
     if not assessment.observations:
         verdict = "not_tested"
         reasons.append("No checks have been executed.")
-    elif (
-        assessment.scope_confirmed
-        and any(obs.outcome == "fail" and trusted for obs, trusted in verified_obs)
+    elif assessment.scope_confirmed and any(
+        obs.outcome == "fail" and trusted for obs, trusted in verified_obs
     ):
         verdict = "failed"
         reasons.append("An evidenced, scoped control check failed.")
