@@ -5,6 +5,7 @@ from pathlib import Path
 from pydantic import ValidationError
 
 from .doctor import hash_payload
+from .assurance.models import AssessmentReport
 from .models import (
     DoctorEvidence,
     EvidenceVerification,
@@ -67,6 +68,8 @@ def verify_evidence_file(path: Path) -> EvidenceVerification:
             DoctorEvidence.model_validate(loaded)
         elif assessment_type == "terraform-plan-assessment":
             TerraformScanEvidence.model_validate(loaded)
+        elif assessment_type == "cvp-evaluation":
+            AssessmentReport.model_validate(loaded)
         else:
             schema_valid = False
             error = "Unsupported evidence assessment type."
