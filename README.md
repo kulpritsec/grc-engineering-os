@@ -83,6 +83,16 @@ artifact origin or provide a compliance certification.
 See [CVP and Evidence Vault integration](docs/CVP_VAULT_LINKS.md)
 for a synthetic end-to-end workflow and the negative-test cases.
 
+## Persistent assurance history (development)
+
+`grcctl assurance publish` preserves a completed report in the local Evidence
+Vault, rechecks its referenced artifact digests, and records the assessment's
+procedure ID, timestamp, result and evidence relationships. These can be
+queried using `grcctl assurance history` and `grcctl assurance evidence-usage`.
+The metadata is **not** yet a tamper-proof or authenticated audit ledger.
+
+See [Assurance History](docs/ASSURANCE_HISTORY.md).
+
 ## Requirements
 
 - Debian GNU/Linux 13 or another supported Linux environment
