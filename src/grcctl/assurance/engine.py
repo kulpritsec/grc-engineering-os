@@ -35,7 +35,6 @@ def _artifact_status(root: Path, relative_path: str, expected_hash: str) -> str:
     return "matched" if actual_hash == expected_hash else "hash_mismatch"
 
 
-
 def _evidence_status(
     evidence: ArtifactReference, workspace: Path, vault_root: Path | None
 ) -> str:
