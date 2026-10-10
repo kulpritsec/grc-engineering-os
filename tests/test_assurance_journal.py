@@ -156,9 +156,9 @@ def test_blob_tamper_is_separate_from_local_journal_integrity(
     catalog, report = _demo(tmp_path)
     pub = catalog.publish(report)
     root = catalog.vault.root
-    evidence = [
+    evidence = next(
         item for item in catalog.vault.list_artifacts() if item.kind == "test-result"
-    ][0]
+    )
     digest = evidence.sha256
     blob = root / "objects" / "sha256" / digest[:2] / digest
     blob.write_text("tampered", encoding="utf-8")
