@@ -4,8 +4,8 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from .doctor import hash_payload
 from .assurance.models import AssessmentReport
+from .doctor import hash_payload
 from .models import (
     DoctorEvidence,
     EvidenceVerification,
