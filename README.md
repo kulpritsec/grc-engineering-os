@@ -93,6 +93,19 @@ The metadata is **not** yet a tamper-proof or authenticated audit ledger.
 
 See [Assurance History](docs/ASSURANCE_HISTORY.md).
 
+## Local journal verification (development)
+
+Published assessment history also maintains a hash-chained journal, checked
+against its saved publications and evidence relationships.
+
+```bash
+uv run grcctl assurance journal-verify --vault-root evidence/vault
+```
+
+This is **local inconsistency detection**, not digital signing, trusted custody
+or independent anti-rollback protection. See
+[Local Publication Journal](docs/LOCAL_PUBLICATION_JOURNAL.md).
+
 ## Requirements
 
 - Debian GNU/Linux 13 or another supported Linux environment
