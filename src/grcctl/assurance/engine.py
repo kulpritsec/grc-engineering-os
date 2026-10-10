@@ -29,19 +29,25 @@ def _artifact_status(root: Path, relative_path: str, expected_hash: str) -> str:
     return "matched" if actual_hash == expected_hash else "hash_mismatch"
 
 
-def evaluate_assessment(assessment: AssessmentInput, workspace: Path) -> AssessmentReport:
+def evaluate_assessment(
+    assessment: AssessmentInput, workspace: Path
+) -> AssessmentReport:
     """Verify a bounded assertion, never an organization's overall compliance."""
     reasons: list[str] = []
     ids = [artifact.id for artifact in assessment.evidence]
     checks = [observation.check_id for observation in assessment.observations]
     if len(ids) != len(set(ids)) or len(checks) != len(set(checks)):
-        raise AssessmentInputError("Evidence IDs and observation check IDs must be unique.")
+        raise AssessmentInputError(
+            "Evidence IDs and observation check IDs must be unique."
+        )
     if len(set(assessment.procedure.required_check_ids)) != len(
         assessment.procedure.required_check_ids
     ):
         raise AssessmentInputError("Required check IDs must be unique.")
     artifact_status = {
-        evidence.id: _artifact_status(workspace, evidence.relative_path, evidence.sha256)
+        evidence.id: _artifact_status(
+            workspace, evidence.relative_path, evidence.sha256
+        )
         for evidence in assessment.evidence
     }
     evidence_by_id = {artifact.id: artifact for artifact in assessment.evidence}
@@ -62,7 +68,9 @@ def evaluate_assessment(assessment: AssessmentInput, workspace: Path) -> Assessm
         )
         verified_obs.append((observation, trusted))
         if not trusted:
-            reasons.append(f"Observation {observation.check_id} lacks matching evidence.")
+            reasons.append(
+                f"Observation {observation.check_id} lacks matching evidence."
+            )
 
     missing_checks = set(assessment.procedure.required_check_ids) - set(observations)
     for check_id in sorted(missing_checks):
@@ -73,7 +81,9 @@ def evaluate_assessment(assessment: AssessmentInput, workspace: Path) -> Assessm
         if trusted
         for ref in obs.evidence_ids
     }
-    for kind in sorted(set(assessment.procedure.required_evidence_kinds) - present_kinds):
+    for kind in sorted(
+        set(assessment.procedure.required_evidence_kinds) - present_kinds
+    ):
         reasons.append(f"Required evidence kind {kind} is missing.")
 
     verdict: AssuranceVerdict
@@ -106,12 +116,16 @@ def evaluate_assessment(assessment: AssessmentInput, workspace: Path) -> Assessm
         verdict=verdict,
         reasons=reasons,
         limitations=[
-            "Evidence hashes verify local byte consistency only, not source authenticity.",
+            "Evidence hashes verify local byte consistency only, "
+            "not source authenticity.",
             "Caller-supplied scope confirmation is not an authorization mechanism.",
-            "Verification applies only to the named assertion, checks and time of evaluation.",
+            "Verification applies only to the named assertion, checks "
+            "and time of evaluation.",
         ],
     )
-    report.evidence_hash = hash_payload(report.model_dump(mode="json", exclude={"evidence_hash"}))
+    report.evidence_hash = hash_payload(
+        report.model_dump(mode="json", exclude={"evidence_hash"})
+    )
     return report
 
 
