@@ -8,7 +8,13 @@ from pathlib import Path
 from pydantic import ValidationError
 
 from ..doctor import hash_payload
-from .models import AssessmentInput, AssessmentReport, AssuranceVerdict
+from ..vault import LocalEvidenceVault, VaultError
+from .models import (
+    ArtifactReference,
+    AssessmentInput,
+    AssessmentReport,
+    AssuranceVerdict,
+)
 
 
 class AssessmentInputError(ValueError):
@@ -29,8 +35,34 @@ def _artifact_status(root: Path, relative_path: str, expected_hash: str) -> str:
     return "matched" if actual_hash == expected_hash else "hash_mismatch"
 
 
+
+def _evidence_status(
+    evidence: ArtifactReference, workspace: Path, vault_root: Path | None
+) -> str:
+    """Validate local bytes or resolve a specific vault record by UUID."""
+    if evidence.relative_path is not None:
+        return _artifact_status(workspace, evidence.relative_path, evidence.sha256)
+
+    if vault_root is None:
+        return "vault_not_configured"
+
+    # Lookup must not silently initialize a new store at a misspelled location.
+    if not vault_root.is_dir() or not (vault_root / "vault.db").is_file():
+        return "vault_missing"
+
+    try:
+        vault = LocalEvidenceVault(vault_root)
+        assert evidence.vault_artifact_id is not None
+        record = vault.get(evidence.vault_artifact_id)
+        if record.sha256 != evidence.sha256 or record.kind != evidence.kind:
+            return "metadata_mismatch"
+        return vault.verify(record.artifact_id).status
+    except (VaultError, OSError):
+        return "vault_reference_invalid"
+
+
 def evaluate_assessment(
-    assessment: AssessmentInput, workspace: Path
+    assessment: AssessmentInput, workspace: Path, vault_root: Path | None = None
 ) -> AssessmentReport:
     """Verify a bounded assertion, never an organization's overall compliance."""
     reasons: list[str] = []
@@ -45,9 +77,7 @@ def evaluate_assessment(
     ):
         raise AssessmentInputError("Required check IDs must be unique.")
     artifact_status = {
-        evidence.id: _artifact_status(
-            workspace, evidence.relative_path, evidence.sha256
-        )
+        evidence.id: _evidence_status(evidence, workspace, vault_root)
         for evidence in assessment.evidence
     }
     evidence_by_id = {artifact.id: artifact for artifact in assessment.evidence}
@@ -132,14 +162,16 @@ def evaluate_assessment(
     return report
 
 
-def evaluate_file(input_path: Path, output_path: Path) -> AssessmentReport:
+def evaluate_file(
+    input_path: Path, output_path: Path, vault_root: Path | None = None
+) -> AssessmentReport:
     """Read a local JSON specification and preserve the resulting bounded assessment."""
     try:
         raw = json.loads(input_path.read_text(encoding="utf-8"))
         assessment = AssessmentInput.model_validate(raw)
     except (OSError, json.JSONDecodeError, ValidationError) as exc:
         raise AssessmentInputError(f"Invalid assessment input: {exc}") from exc
-    report = evaluate_assessment(assessment, input_path.parent)
+    report = evaluate_assessment(assessment, input_path.parent, vault_root)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(report.model_dump_json(indent=2) + "\n", encoding="utf-8")
     output_path.chmod(0o600)
