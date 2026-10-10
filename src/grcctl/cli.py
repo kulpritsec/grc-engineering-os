@@ -203,3 +203,40 @@ def scan_terraform(
         return
 
     console.print("\n[bold green]Status: PASSED[/bold green]")
+
+assurance_app = typer.Typer(
+    help="Evaluate scoped Control Verification Procedures (CVPs).",
+    no_args_is_help=True,
+)
+app.add_typer(assurance_app, name="assurance")
+
+AssuranceInputPath = Annotated[
+    Path,
+    typer.Argument(help="CVP input JSON; artifact paths resolve within its directory."),
+]
+
+
+@assurance_app.command("evaluate")
+def assurance_evaluate(
+    input_path: AssuranceInputPath,
+    output: OutputPath = Path("evidence/cvp-assessment.json"),
+) -> None:
+    """Evaluate a bounded claim using local, SHA-256-matched evidence."""
+    from .assurance import AssessmentInputError, evaluate_file
+
+    try:
+        report = evaluate_file(input_path, output)
+    except (AssessmentInputError, OSError) as exc:
+        console.print(f"[red]Assessment input error: {exc}[/red]")
+        raise typer.Exit(code=2) from exc
+
+    console.print(f"Verdict: [bold]{report.verdict.upper()}[/bold]")
+    console.print(f"Procedure: {report.procedure.id}")
+    console.print(f"Scope: {report.procedure.scope}")
+    for reason in report.reasons:
+        console.print(f"- {reason}")
+    console.print(f"Evidence record: {output}")
+    console.print(f"SHA-256: {report.evidence_hash}")
+    console.print(
+        "[dim]Hash consistency is not proof of origin or organizational compliance.[/dim]"
+    )
