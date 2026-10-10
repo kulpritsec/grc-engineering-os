@@ -128,7 +128,9 @@ def cvp_preflight(payload: AssessmentInput) -> PreflightResult:
         issues=issues,
         limitations=[
             "Structural readiness is not an assurance verdict.",
-            "Evidence files, hashes, scope, permissions and outcomes were "
-            "not verified by this endpoint.",
+            (
+                "Evidence files, hashes, scope, permissions and outcomes were "
+                "not verified by this endpoint."
+            ),
         ],
     )
