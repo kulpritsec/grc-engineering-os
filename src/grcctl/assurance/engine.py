@@ -115,11 +115,15 @@ def evaluate_assessment(
         verdict=verdict,
         reasons=reasons,
         limitations=[
-            "Evidence hashes verify local byte consistency only, "
-            "not source authenticity.",
+            (
+                "Evidence hashes verify local byte consistency only, "
+                "not source authenticity."
+            ),
             "Caller-supplied scope confirmation is not an authorization mechanism.",
-            "Verification applies only to the named assertion, checks "
-            "and time of evaluation.",
+            (
+                "Verification applies only to the named assertion, checks "
+                "and time of evaluation."
+            ),
         ],
     )
     report.evidence_hash = hash_payload(
