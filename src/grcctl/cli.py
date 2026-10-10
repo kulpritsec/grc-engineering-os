@@ -204,6 +204,7 @@ def scan_terraform(
 
     console.print("\n[bold green]Status: PASSED[/bold green]")
 
+
 assurance_app = typer.Typer(
     help="Evaluate scoped Control Verification Procedures (CVPs).",
     no_args_is_help=True,
