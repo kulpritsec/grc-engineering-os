@@ -400,3 +400,30 @@ def assurance_evidence_usage(
     for link in links:
         table.add_row(link.publication_id, link.evidence_id, link.kind)
     console.print(table)
+
+
+@assurance_app.command("journal-verify")
+def assurance_journal_verify(
+    vault_root: Annotated[Path, typer.Option("--vault-root")] = Path("evidence/vault"),
+) -> None:
+    """Check the local publication hash chain and recorded evidence links."""
+    from .assurance.catalog import LocalAssuranceCatalog
+    from .vault import VaultError
+
+    try:
+        result = LocalAssuranceCatalog(vault_root).journal_status()
+    except (VaultError, OSError) as exc:
+        console.print(f"[red]Journal verification error: {exc}[/red]")
+        raise typer.Exit(code=2) from exc
+
+    console.print(f"Events checked: {result.events_checked}")
+    for problem in result.problems:
+        console.print(f"[red]- {problem}[/red]")
+    console.print(
+        "[dim]Local hash chaining is not a digital signature, "
+        "independent time source or WORM protection.[/dim]"
+    )
+    if not result.valid:
+        console.print("[bold red]JOURNAL CHECK FAILED[/bold red]")
+        raise typer.Exit(code=1)
+    console.print("[bold green]LOCAL JOURNAL CONSISTENT[/bold green]")
