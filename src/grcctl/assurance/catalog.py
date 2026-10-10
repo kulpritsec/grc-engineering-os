@@ -5,7 +5,6 @@ ledger or authenticated release decision. This adapter is for synthetic labs.
 """
 
 import hashlib
-import json
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -180,7 +179,9 @@ class LocalAssuranceCatalog:
                 )
         return publication
 
-    def history(self, procedure_id: str, limit: int = 100) -> list[AssessmentPublication]:
+    def history(
+        self, procedure_id: str, limit: int = 100
+    ) -> list[AssessmentPublication]:
         """Return past evaluation publications in reverse publication order."""
         if not 1 <= limit <= 1000:
             raise CatalogError("History limit must be between 1 and 1000.")
@@ -224,8 +225,7 @@ class LocalAssuranceCatalog:
         result: dict[str, str] = {}
         references = [("report", report["report_artifact_id"], report["report_sha256"])]
         references.extend(
-            (link["evidence_id"], link["artifact_id"], link["sha256"])
-            for link in links
+            (link["evidence_id"], link["artifact_id"], link["sha256"]) for link in links
         )
         for name, artifact_id, digest in references:
             try:
