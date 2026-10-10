@@ -57,9 +57,7 @@ def create_case(tmp_path: Path, *, outcome: str = "pass"):
 def test_saved_vault_reference_survives_deleted_source(tmp_path: Path) -> None:
     root, source, _vault, artifact, input_path, _data = create_case(tmp_path)
     source.unlink()
-    result = evaluate_file(
-        input_path, tmp_path / "cvp-result.json", vault_root=root
-    )
+    result = evaluate_file(input_path, tmp_path / "cvp-result.json", vault_root=root)
     assert result.verdict == "verified"
     assert result.artifact_checks["EV-1"] == "matched"
     assert result.evidence[0].vault_artifact_id == artifact.artifact_id
@@ -72,8 +70,13 @@ def test_cli_vault_reference_and_bad_scope(tmp_path: Path) -> None:
     result = runner.invoke(
         app,
         [
-            "assurance", "evaluate", str(input_path),
-            "--vault-root", str(root), "--output", str(tmp_path / "out.json"),
+            "assurance",
+            "evaluate",
+            str(input_path),
+            "--vault-root",
+            str(root),
+            "--output",
+            str(tmp_path / "out.json"),
         ],
     )
     assert result.exit_code == 0, result.output
@@ -139,7 +142,8 @@ def test_mixed_local_and_vault_evidence(tmp_path: Path) -> None:
     local.write_text("synthetic local secondary observation", encoding="utf-8")
     data["evidence"].append(
         {
-            "id": "EV-2", "kind": "test-result",
+            "id": "EV-2",
+            "kind": "test-result",
             "relative_path": "second.txt",
             "sha256": hashlib.sha256(local.read_bytes()).hexdigest(),
         }
@@ -153,7 +157,8 @@ def test_mixed_local_and_vault_evidence(tmp_path: Path) -> None:
 
 def test_reference_requires_exactly_one_location() -> None:
     base = {
-        "id": "EV-1", "kind": "test-result",
+        "id": "EV-1",
+        "kind": "test-result",
         "sha256": "a" * 64,
     }
     with pytest.raises(ValidationError):
