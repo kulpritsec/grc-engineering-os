@@ -6,6 +6,8 @@ enforce immutable retention, or provide a production security boundary.
 """
 
 import hashlib
+from collections.abc import Iterator
+from contextlib import contextmanager
 import os
 import re
 import sqlite3
@@ -104,10 +106,15 @@ class LocalEvidenceVault:
                 "ON artifacts(sha256)"
             )
 
-    def _connect(self) -> sqlite3.Connection:
+    @contextmanager
+    def _connect(self) -> Iterator[sqlite3.Connection]:
         db = sqlite3.connect(self.db_path, timeout=10)
         db.row_factory = sqlite3.Row
-        return db
+        try:
+            with db:
+                yield db
+        finally:
+            db.close()
 
     def _object_path(self, digest: str) -> Path:
         if not _DIGEST.fullmatch(digest):
