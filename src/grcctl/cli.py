@@ -221,12 +221,19 @@ AssuranceInputPath = Annotated[
 def assurance_evaluate(
     input_path: AssuranceInputPath,
     output: OutputPath = Path("evidence/cvp-assessment.json"),
+    vault_root: Annotated[
+        Path,
+        typer.Option(
+            "--vault-root",
+            help="Local vault used to resolve stable artifact IDs.",
+        ),
+    ] = Path("evidence/vault"),
 ) -> None:
-    """Evaluate a bounded claim using local, SHA-256-matched evidence."""
+    """Evaluate a bounded claim against local files or vault artifact IDs."""
     from .assurance import AssessmentInputError, evaluate_file
 
     try:
-        report = evaluate_file(input_path, output)
+        report = evaluate_file(input_path, output, vault_root=vault_root)
     except (AssessmentInputError, OSError) as exc:
         console.print(f"[red]Assessment input error: {exc}[/red]")
         raise typer.Exit(code=2) from exc
