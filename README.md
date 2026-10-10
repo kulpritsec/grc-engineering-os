@@ -38,6 +38,26 @@ flowchart LR
 | `grcctl scan terraform` | Assesses Terraform/OpenTofu JSON plans |
 | `--fail-on-findings` | Returns a nonzero exit code for CI enforcement |
 
+## Unified Platform Foundation (development branch)
+
+The next architecture keeps GRC Engineering OS as **one modular platform**, not separate products stitched together after the fact. Its common assurance core connects control assertions, technical observations, evidence and bounded conclusions. Specialist Scout, Trace, Crypto and Audit Runner modules will use these common contracts.
+
+- [Architecture and staged build gates](docs/ARCHITECTURE.md)
+- [Solo-founder agentic development operating procedure](docs/AGENTIC_DEVELOPMENT.md)
+- [Engineering Control Tower specification](docs/ENGINEERING_CONTROL_TOWER.md)
+- [Repository agent contribution rules](AGENTS.md)
+
+The first executable foundation adds `grcctl assurance evaluate INPUT.json --output evidence/cvp-assessment.json`. Inputs identify a scoped Control Verification Procedure, required checks, actual observations and artifact references. Evidence files must live inside the input JSON's directory and have matching SHA-256 digests. The command returns a **bounded test assertion verdict** (`verified`, `failed`, `inconclusive`, or `not_tested`) with explicit limitations.
+
+Reproduce the development tests:
+
+```bash
+uv sync --locked
+uv run pytest -q tests/test_assurance.py
+```
+
+The evaluator currently trusts the **caller's assertion of scope** and only checks **local byte consistency**. It does not authenticate collectors, prove custody, issue regulatory compliance certifications, run active scans, or provide an evidence vault/web UI. These are planned downstream gates, not existing capabilities.
+
 ## Requirements
 
 - Debian GNU/Linux 13 or another supported Linux environment
