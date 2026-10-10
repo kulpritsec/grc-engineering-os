@@ -145,6 +145,12 @@ class LocalAssuranceCatalog:
             report_sha256=stored.sha256,
         )
         with self.vault._connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            if not verify_journal(db).valid:
+                raise CatalogError(
+                    "Existing publication journal is inconsistent; "
+                    "refusing to extend it."
+                )
             db.execute(
                 """
                 INSERT INTO assessment_publications (
