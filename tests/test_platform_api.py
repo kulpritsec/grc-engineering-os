@@ -1,0 +1,94 @@
+"""Tests for the optional local FastAPI starter.
+
+The base CLI project does not depend on FastAPI. CI without API extras skips
+these checks until the optional API dependencies are added to the lockfile.
+"""
+
+import pytest
+
+pytest.importorskip("fastapi")
+pytest.importorskip("httpx")
+
+from fastapi.testclient import TestClient  # noqa: E402
+
+from grcctl.platform_api import app  # noqa: E402
+
+client = TestClient(app)
+
+
+def _payload() -> dict[str, object]:
+    return {
+        "assessment_id": "ASSESS-DEMO-001",
+        "procedure": {
+            "id": "CVP-DEMO-001",
+            "title": "Sandbox access test",
+            "assertion": "Unauthorized test identity is denied access.",
+            "scope": "synthetic sandbox",
+            "required_check_ids": ["deny"],
+            "required_evidence_kinds": ["test-result"],
+        },
+        "observations": [
+            {"check_id": "deny", "outcome": "pass", "evidence_ids": ["ev-1"]}
+        ],
+        "evidence": [
+            {
+                "id": "ev-1",
+                "kind": "test-result",
+                "relative_path": "test.txt",
+                "sha256": "0" * 64,
+            }
+        ],
+        "scope_confirmed": False,
+        "coverage_complete": False,
+    }
+
+
+def test_landing_page_and_health() -> None:
+    response = client.get("/")
+    assert response.status_code == 200
+    assert "Kulprit GRC Engineering OS" in response.text
+    response = client.get("/v1/health")
+    assert response.status_code == 200
+    assert response.json()["status"] == "development"
+
+
+def test_module_inventory_does_not_claim_planned_are_live() -> None:
+    response = client.get("/v1/modules")
+    assert response.status_code == 200
+    assert "evidence-vault" in response.json()["planned"]
+    assert "evidence-vault" not in response.json()["available"]
+
+
+def test_cvp_schema_exposes_contract() -> None:
+    response = client.get("/v1/assurance/schema")
+    assert response.status_code == 200
+    assert "properties" in response.json()
+    assert "procedure" in response.json()["properties"]
+
+
+def test_preflight_does_not_claim_verification() -> None:
+    response = client.post("/v1/assurance/preflight", json=_payload())
+    assert response.status_code == 200
+    body = response.json()
+    assert body["structurally_ready"] is True
+    assert "verdict" not in body
+    assert any("not verified" in line for line in body["limitations"])
+
+
+def test_missing_required_observation_and_invalid_reference() -> None:
+    payload = _payload()
+    payload["observations"] = [
+        {"check_id": "other", "outcome": "pass", "evidence_ids": ["missing-id"]}
+    ]
+    response = client.post("/v1/assurance/preflight", json=payload)
+    assert response.status_code == 200
+    assert response.json()["structurally_ready"] is False
+    assert any("Required observation missing" in x for x in response.json()["issues"])
+    assert any("unknown evidence" in x for x in response.json()["issues"])
+
+
+def test_schema_validation_rejects_missing_procedure() -> None:
+    payload = _payload()
+    payload.pop("procedure")
+    response = client.post("/v1/assurance/preflight", json=payload)
+    assert response.status_code == 422
