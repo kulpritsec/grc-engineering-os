@@ -127,15 +127,11 @@ def test_cli_ingest_list_verify_and_corruption_exit(tmp_path: Path) -> None:
     listing = runner.invoke(app, ["vault", "list", "--root", str(root)])
     assert listing.exit_code == 0, listing.output
     assert "test-result" in listing.output
-    verified = runner.invoke(
-        app, ["vault", "verify", artifact_id, "--root", str(root)]
-    )
+    verified = runner.invoke(app, ["vault", "verify", artifact_id, "--root", str(root)])
     assert verified.exit_code == 0, verified.output
     assert "MATCHED" in verified.output
     digest = LocalEvidenceVault(root).get(artifact_id).sha256
     _blob_path(root, digest).write_text("bad", encoding="utf-8")
-    rejected = runner.invoke(
-        app, ["vault", "verify", artifact_id, "--root", str(root)]
-    )
+    rejected = runner.invoke(app, ["vault", "verify", artifact_id, "--root", str(root)])
     assert rejected.exit_code == 1
     assert "HASH_MISMATCH" in rejected.output
