@@ -37,11 +37,11 @@ jobs:
         run: uv run ruff check .
 
       - name: Run type checking
-        run: uv run mypy src
+        run: uv run --no-sync --with-requirements requirements/platform-dev.txt mypy src
 
       - name: Run tests
         run: >
-          uv run pytest
+          uv run --no-sync --with-requirements requirements/platform-dev.txt pytest
           --cov=grcctl
           --cov-report=term-missing
           --cov-fail-under=70
