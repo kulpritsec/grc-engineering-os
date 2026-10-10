@@ -115,7 +115,7 @@ def test_tampered_evidence_blocks_publication(tmp_path: Path) -> None:
     root, stored, report = fixture_run(tmp_path)
     blob = root / "objects" / "sha256" / stored.sha256[:2] / stored.sha256
     blob.write_text("corrupted", encoding="utf-8")
-    with pytest.raises(CatalogError, match="Current evidence checks differ"):
+    with pytest.raises(CatalogError, match="differs from reevaluation"):
         LocalAssuranceCatalog(root).publish(report)
 
 
