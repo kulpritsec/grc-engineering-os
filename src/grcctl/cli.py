@@ -327,3 +327,76 @@ def vault_list(
         )
     console.print(table)
     console.print(f"{len(artifacts)} local ingestion records")
+
+
+@assurance_app.command("publish")
+def assurance_publish(
+    report_path: Annotated[Path, typer.Argument(help="Completed CVP report JSON.")],
+    vault_root: Annotated[Path, typer.Option("--vault-root")] = Path("evidence/vault"),
+) -> None:
+    """Recheck evidence and preserve an assessment-to-evidence publication."""
+    from .assurance.catalog import CatalogError, LocalAssuranceCatalog
+    from .vault import VaultError
+
+    try:
+        publication = LocalAssuranceCatalog(vault_root).publish(report_path)
+    except (CatalogError, VaultError, OSError) as exc:
+        console.print(f"[red]Publication refused: {exc}[/red]")
+        raise typer.Exit(code=2) from exc
+    console.print("[green]PUBLISHED[/green] — local metadata, unsigned")
+    console.print(f"Publication ID: {publication.publication_id}")
+    console.print(f"Assessment: {publication.assessment_id}")
+    console.print(f"CVP: {publication.procedure_id}")
+    console.print(f"Verdict: {publication.verdict.upper()}")
+
+
+@assurance_app.command("history")
+def assurance_history(
+    procedure_id: Annotated[str, typer.Argument(help="Control procedure ID.")],
+    vault_root: Annotated[Path, typer.Option("--vault-root")] = Path("evidence/vault"),
+) -> None:
+    """List saved assessment runs for a particular CVP."""
+    from .assurance.catalog import LocalAssuranceCatalog
+    from .vault import VaultError
+
+    try:
+        records = LocalAssuranceCatalog(vault_root).history(procedure_id)
+    except (VaultError, OSError) as exc:
+        console.print(f"[red]History error: {exc}[/red]")
+        raise typer.Exit(code=2) from exc
+    table = Table(title="Local Assurance History")
+    table.add_column("Published at")
+    table.add_column("CVP")
+    table.add_column("Verdict")
+    table.add_column("Publication ID")
+    for entry in records:
+        table.add_row(
+            entry.published_at,
+            entry.procedure_id,
+            entry.verdict,
+            entry.publication_id,
+        )
+    console.print(table)
+
+
+@assurance_app.command("evidence-usage")
+def assurance_evidence_usage(
+    artifact_id: Annotated[str, typer.Argument(help="Vault ingestion UUID.")],
+    vault_root: Annotated[Path, typer.Option("--vault-root")] = Path("evidence/vault"),
+) -> None:
+    """Find published CVP assessments referencing an evidence ingestion."""
+    from .assurance.catalog import LocalAssuranceCatalog
+    from .vault import VaultError
+
+    try:
+        links = LocalAssuranceCatalog(vault_root).evidence_usage(artifact_id)
+    except (VaultError, OSError) as exc:
+        console.print(f"[red]Evidence lookup error: {exc}[/red]")
+        raise typer.Exit(code=2) from exc
+    table = Table(title="Evidence-to-CVP Links")
+    table.add_column("Publication ID")
+    table.add_column("Evidence ID")
+    table.add_column("Kind")
+    for link in links:
+        table.add_row(link.publication_id, link.evidence_id, link.kind)
+    console.print(table)
