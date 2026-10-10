@@ -9,9 +9,9 @@ import pytest
 pytest.importorskip("fastapi")
 pytest.importorskip("httpx")
 
-from fastapi.testclient import TestClient  # noqa: E402
+from fastapi.testclient import TestClient
 
-from grcctl.platform_api import app  # noqa: E402
+from grcctl.platform_api import app
 
 client = TestClient(app)
 
