@@ -6,13 +6,13 @@ enforce immutable retention, or provide a production security boundary.
 """
 
 import hashlib
-from collections.abc import Iterator
-from contextlib import contextmanager
 import os
 import re
 import sqlite3
 import stat
 import tempfile
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
