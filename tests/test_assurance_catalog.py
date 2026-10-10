@@ -1,5 +1,6 @@
 """Ground-truth checks for persisted assessment/evidence relationships."""
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -96,7 +97,9 @@ def test_publish_failed_observation_with_valid_evidence(tmp_path: Path) -> None:
     )
 
 
-def test_report_rewrite_with_recomputed_hash_cannot_force_verdict(tmp_path: Path) -> None:
+def test_report_rewrite_with_recomputed_hash_cannot_force_verdict(
+    tmp_path: Path,
+) -> None:
     root, _stored, report = fixture_run(tmp_path, outcome="fail")
     changed = json.loads(report.read_text(encoding="utf-8"))
     changed["verdict"] = "verified"
@@ -156,9 +159,7 @@ def test_source_report_must_be_valid_and_vault_backed(tmp_path: Path) -> None:
                             "id": "EV-1",
                             "kind": "test-result",
                             "relative_path": "local.txt",
-                            "sha256": __import__("hashlib").sha256(
-                                local.read_bytes()
-                            ).hexdigest(),
+                            "sha256": hashlib.sha256(local.read_bytes()).hexdigest(),
                         }
                     ],
                     "scope_confirmed": True,
