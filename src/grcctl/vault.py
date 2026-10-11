@@ -65,8 +65,38 @@ def _private_dir(path: Path) -> None:
 class LocalEvidenceVault:
     """A bounded local adapter; PostgreSQL/object storage is a later milestone."""
 
-    def __init__(self, root: Path) -> None:
+    def __init__(self, root: Path, *, readonly: bool = False) -> None:
         self.root = root.absolute()
+        self.readonly = readonly
+        self.blobs = self.root / "objects" / "sha256"
+        self.staging = self.root / "staging"
+        self.db_path = self.root / "vault.db"
+        if readonly:
+            if any(p.is_symlink() for p in (self.db_path, *self.db_path.parents)):
+                raise VaultError("Symbolic-link read-only store refused.")
+            if not self.root.is_dir() or not self.db_path.is_file():
+                raise VaultError(
+                    "Read-only access requires an existing Vault database."
+                )
+            if os.name == "posix" and (
+                self.root.stat().st_mode & 0o077 or self.db_path.stat().st_mode & 0o077
+            ):
+                raise VaultError(
+                    "Read-only Vault must have private directory/database permissions."
+                )
+            # SQLite WAL readers can create shared-memory files. This local reader
+            # deliberately supports only rollback-journal stores, not immutable=1
+            # (which could silently ignore uncheckpointed WAL data).
+            with self.db_path.open("rb") as metadata_reader:
+                header = metadata_reader.read(20)
+            if header[18:20] == b"\x02\x02" or any(
+                Path(str(self.db_path) + suffix).exists()
+                for suffix in ("-wal", "-shm", "-journal")
+            ):
+                raise VaultError(
+                    "Read-only projection requires a quiescent rollback-journal Vault."
+                )
+            return
         _private_dir(self.root)
         self.blobs = self.root / "objects" / "sha256"
         self.staging = self.root / "staging"
@@ -107,9 +137,16 @@ class LocalEvidenceVault:
 
     @contextmanager
     def _connect(self) -> Iterator[sqlite3.Connection]:
-        db = sqlite3.connect(self.db_path, timeout=10)
+        db = sqlite3.connect(
+            self.db_path.as_uri() + "?mode=ro" if self.readonly else self.db_path,
+            uri=self.readonly,
+            timeout=10,
+        )
         db.row_factory = sqlite3.Row
         try:
+            if self.readonly:
+                db.execute("PRAGMA query_only = ON")
+                db.execute("PRAGMA trusted_schema = OFF")
             with db:
                 yield db
         finally:
@@ -120,15 +157,37 @@ class LocalEvidenceVault:
             raise VaultError("Invalid stored SHA-256 digest.")
         return self.blobs / digest[:2] / digest
 
-    def _inspect_object(self, digest: str, expected_size: int) -> tuple[str, str]:
+    def _inspect_object(
+        self, digest: str, expected_size: int, max_bytes: int | None = None
+    ) -> tuple[str, str]:
         path = self._object_path(digest)
-        if path.is_symlink() or path.parent.is_symlink():
+        if (
+            path.is_symlink()
+            or path.parent.is_symlink()
+            or (self.readonly and any(parent.is_symlink() for parent in path.parents))
+        ):
             return "unsafe_store", "Stored object path is a symbolic link."
         if not path.exists():
             return "missing", "Stored object is unavailable."
         fd: int | None = None
         try:
-            fd = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+            if max_bytes is not None:
+                before = path.stat()
+                if not stat.S_ISREG(before.st_mode):
+                    return "unsafe_store", "Stored object is not a regular file."
+                if before.st_size != expected_size:
+                    return "hash_mismatch", "Stored size no longer matches the record."
+                if before.st_size > max_bytes:
+                    return (
+                        "not_checked_budget",
+                        "Stored object exceeds verification budget.",
+                    )
+            fd = os.open(
+                path,
+                os.O_RDONLY
+                | getattr(os, "O_NOFOLLOW", 0)
+                | (getattr(os, "O_NONBLOCK", 0) if max_bytes is not None else 0),
+            )
             metadata = os.fstat(fd)
             if not stat.S_ISREG(metadata.st_mode):
                 return "unsafe_store", "Stored object is not a regular file."
@@ -136,9 +195,18 @@ class LocalEvidenceVault:
             size = 0
             with os.fdopen(fd, "rb") as handle:
                 fd = None
-                for block in iter(lambda: handle.read(_CHUNK_BYTES), b""):
-                    actual.update(block)
+                while block := handle.read(
+                    _CHUNK_BYTES
+                    if max_bytes is None
+                    else min(_CHUNK_BYTES, max_bytes - size + 1)
+                ):
                     size += len(block)
+                    if max_bytes is not None and size > max_bytes:
+                        return (
+                            "not_checked_budget",
+                            "Stored object grew beyond verification budget.",
+                        )
+                    actual.update(block)
             if size != expected_size or actual.hexdigest() != digest:
                 return "hash_mismatch", "Stored bytes no longer match the record."
             return "matched", "Local artifact bytes match their recorded digest."
@@ -157,6 +225,8 @@ class LocalEvidenceVault:
         max_bytes: int = _MAX_BYTES,
     ) -> VaultArtifact:
         """Stage, hash and atomically retain a bounded regular local file."""
+        if self.readonly:
+            raise VaultError("Cannot ingest into a read-only Vault.")
         if not _KIND.fullmatch(kind):
             raise VaultError("Artifact kind must be a simple lowercase token.")
         if not origin_claim.strip() or len(origin_claim) > 256:
@@ -258,8 +328,23 @@ class LocalEvidenceVault:
 
     def verify(self, artifact_id: str) -> VaultCheck:
         artifact = self.get(artifact_id)
-        status, detail = self._inspect_object(artifact.sha256, artifact.size_bytes)
-        return VaultCheck(artifact_id, artifact.sha256, status, detail)
+        return self.verify_record(artifact)
+
+    def verify_record(
+        self, artifact: VaultArtifact, *, max_bytes: int | None = None
+    ) -> VaultCheck:
+        """Verify a metadata snapshot without opening a second database view."""
+        if max_bytes is not None and artifact.size_bytes > max_bytes:
+            return VaultCheck(
+                artifact.artifact_id,
+                artifact.sha256,
+                "not_checked_budget",
+                "Declared size exceeds verification budget.",
+            )
+        status, detail = self._inspect_object(
+            artifact.sha256, artifact.size_bytes, max_bytes
+        )
+        return VaultCheck(artifact.artifact_id, artifact.sha256, status, detail)
 
     def artifact_path(self, artifact_id: str) -> Path:
         """Resolve a retained record for independent byte verification.

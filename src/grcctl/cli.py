@@ -214,6 +214,42 @@ assurance_app = typer.Typer(
 )
 app.add_typer(assurance_app, name="assurance")
 
+
+@assurance_app.command("relationships")
+def assurance_relationships(
+    vault_root: Annotated[Path, typer.Option("--vault-root")] = Path("evidence/vault"),
+    limit: Annotated[
+        int, typer.Option("--limit", help="Maximum rows per source table (1–1000).")
+    ] = 200,
+    max_verify_bytes: Annotated[
+        int, typer.Option("--max-verify-bytes", help="Total current byte-check budget.")
+    ] = 256 * 1024 * 1024,
+    output: Annotated[
+        Path | None,
+        typer.Option(
+            "--output",
+            help="New output file outside the source Vault; defaults to stdout.",
+        ),
+    ] = None,
+) -> None:
+    """Project stored evidence relationships without changing source storage."""
+    from .relationships import ProjectionError, export_relationships
+
+    try:
+        projection = export_relationships(
+            vault_root, limit=limit, max_verify_bytes=max_verify_bytes, output=output
+        )
+    except (ProjectionError, OSError) as exc:
+        typer.echo(f"Relationship projection refused: {exc}", err=True)
+        raise typer.Exit(code=2) from exc
+    if output is None:
+        typer.echo(projection.model_dump_json(indent=2))
+    else:
+        typer.echo(f"Relationship projection: {output}")
+    if not projection.complete or not projection.consistent:
+        raise typer.Exit(code=1)
+
+
 AssuranceInputPath = Annotated[
     Path,
     typer.Argument(help="CVP input JSON; artifact paths resolve within its directory."),

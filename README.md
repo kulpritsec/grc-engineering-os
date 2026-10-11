@@ -116,6 +116,14 @@ evidence and optional publications without changing their verdicts.
 See [Signed Evidence Manifests](docs/SIGNED_EVIDENCE_MANIFESTS.md) for the approved
 trust model, reproduction commands, replay boundaries and failure cases.
 
+## Local evidence relationships
+
+`grcctl assurance relationships --vault-root evidence/vault` exports a read-only
+JSON graph of retained ingestions, publications, procedure claims and historical
+manifest links. Current byte/journal checks remain separate from stored verdicts
+and authentication claims. Missing references and bounded partial views are explicit.
+See [Evidence Relationships](docs/EVIDENCE_RELATIONSHIPS.md).
+
 ## Requirements
 
 - Debian GNU/Linux 13 or another supported Linux environment
