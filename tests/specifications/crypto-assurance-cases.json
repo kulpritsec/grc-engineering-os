@@ -1,0 +1,203 @@
+{
+  "schema_version": "kulprit.crypto-assurance.test-spec.v0.1",
+  "status": "specified_not_executed",
+  "target_cbom_format": "CycloneDX",
+  "target_cbom_version": "1.7",
+  "notes": "Test specifications only: no implementation, scans, environments, or cloud resources were run. FIPS claims require exact NIST CMVP validation and deployed approved use evidence.",
+  "test_result_states": [
+    "verified",
+    "failed",
+    "inconclusive",
+    "not_tested",
+    "exception"
+  ],
+  "encryption_path_states": [
+    "true_e2ee_supported",
+    "hop_by_hop_encrypted",
+    "partially_encrypted",
+    "encryption_unverified",
+    "not_applicable"
+  ],
+  "cases": [
+    {
+      "id": "C01",
+      "environment": "local",
+      "title": "Mutual TLS transport authentication",
+      "assertion_or_oracle": "Scoped direct mTLS certificate chain and peer identity observed",
+      "limitation_or_negative_control": "Missing client authentication must be reported",
+      "status": "specified_not_executed",
+      "authorization_required": true,
+      "synthetic_only": true
+    },
+    {
+      "id": "C02",
+      "environment": "local",
+      "title": "Proxy TLS termination and re-encryption",
+      "assertion_or_oracle": "Two distinct TLS sessions, plaintext-at-proxy capability; hop-by-hop not E2EE",
+      "limitation_or_negative_control": "Do not falsely mark end-to-end",
+      "status": "specified_not_executed",
+      "authorization_required": true,
+      "synthetic_only": true
+    },
+    {
+      "id": "C03",
+      "environment": "local",
+      "title": "Plaintext internal backend",
+      "assertion_or_oracle": "Transport from proxy to backend observed/verified without encryption",
+      "limitation_or_negative_control": "No false E2EE assertion",
+      "status": "specified_not_executed",
+      "authorization_required": true,
+      "synthetic_only": true
+    },
+    {
+      "id": "C04",
+      "environment": "local",
+      "title": "Expired, mismatched, untrusted certificate",
+      "assertion_or_oracle": "Specific negative certificate-chain validation recorded",
+      "limitation_or_negative_control": "Avoid unsafe implicit bypass",
+      "status": "specified_not_executed",
+      "authorization_required": true,
+      "synthetic_only": true
+    },
+    {
+      "id": "C05",
+      "environment": "local",
+      "title": "Certificate and issuer rotation",
+      "assertion_or_oracle": "CBOM diff tracks certificate/dependency changes",
+      "limitation_or_negative_control": "Old certificate retired, status and timestamps clear",
+      "status": "specified_not_executed",
+      "authorization_required": true,
+      "synthetic_only": true
+    },
+    {
+      "id": "C06",
+      "environment": "local",
+      "title": "CBOM discovery and CycloneDX export",
+      "assertion_or_oracle": "Schema-valid 1.7 CBOM, stable asset IDs, accurate coverage",
+      "limitation_or_negative_control": "No secret private keys",
+      "status": "specified_not_executed",
+      "authorization_required": true,
+      "synthetic_only": true
+    },
+    {
+      "id": "C07",
+      "environment": "local",
+      "title": "Unsupported FIPS marketing assertion",
+      "assertion_or_oracle": "Vendor claim alone never marks verified validated use",
+      "limitation_or_negative_control": "Requires CMVP ID and validation source",
+      "status": "specified_not_executed",
+      "authorization_required": true,
+      "synthetic_only": true
+    },
+    {
+      "id": "C08",
+      "environment": "local",
+      "title": "FIPS module mismatch/approved mode missing",
+      "assertion_or_oracle": "Certificate/status vs actual module/config mismatch or inconclusive",
+      "limitation_or_negative_control": "Correct named algorithm not sufficient",
+      "status": "specified_not_executed",
+      "authorization_required": true,
+      "synthetic_only": true
+    },
+    {
+      "id": "C09",
+      "environment": "local",
+      "title": "Synthetic key lifecycle and denied read",
+      "assertion_or_oracle": "Key rotation metadata and denied test identity; provenance",
+      "limitation_or_negative_control": "Synthetic key only; no key export",
+      "status": "specified_not_executed",
+      "authorization_required": true,
+      "synthetic_only": true
+    },
+    {
+      "id": "C10",
+      "environment": "local",
+      "title": "Scanner privileges/visibility gap",
+      "assertion_or_oracle": "Inconclusive with missing source and method",
+      "limitation_or_negative_control": "No assertion from absent evidence",
+      "status": "specified_not_executed",
+      "authorization_required": true,
+      "synthetic_only": true
+    },
+    {
+      "id": "A01",
+      "environment": "aws",
+      "title": "Load balancer to service/database encryption path",
+      "assertion_or_oracle": "Document all in-scope hops and TLS termination",
+      "limitation_or_negative_control": "Do not claim global E2EE",
+      "status": "specified_not_executed",
+      "authorization_required": true,
+      "synthetic_only": true
+    },
+    {
+      "id": "A02",
+      "environment": "aws",
+      "title": "S3 SSE-KMS and KMS permissions",
+      "assertion_or_oracle": "At-rest encryption config and synthetic allow/deny test",
+      "limitation_or_negative_control": "Encrypted at rest not E2EE",
+      "status": "specified_not_executed",
+      "authorization_required": true,
+      "synthetic_only": true
+    },
+    {
+      "id": "A03",
+      "environment": "aws",
+      "title": "Managed cryptographic module FIPS validation",
+      "assertion_or_oracle": "Specific CMVP module/version/status plus use evidence",
+      "limitation_or_negative_control": "Vendor assertion marked separately",
+      "status": "specified_not_executed",
+      "authorization_required": true,
+      "synthetic_only": true
+    },
+    {
+      "id": "A04",
+      "environment": "aws",
+      "title": "ACM renewal and endpoint mapping",
+      "assertion_or_oracle": "Diff cert metadata/actual bound endpoint and validate chain",
+      "limitation_or_negative_control": "No private-key extraction",
+      "status": "specified_not_executed",
+      "authorization_required": true,
+      "synthetic_only": true
+    },
+    {
+      "id": "Z01",
+      "environment": "azure",
+      "title": "Application Gateway to App Service/Azure SQL",
+      "assertion_or_oracle": "Document TLS and decrypt/reencrypt points",
+      "limitation_or_negative_control": "Unknown managed-service internals marked",
+      "status": "specified_not_executed",
+      "authorization_required": true,
+      "synthetic_only": true
+    },
+    {
+      "id": "Z02",
+      "environment": "azure",
+      "title": "Key Vault and Blob key permissions",
+      "assertion_or_oracle": "Least privilege denied test and key metadata; at rest only",
+      "limitation_or_negative_control": "No keys or secrets in reports",
+      "status": "specified_not_executed",
+      "authorization_required": true,
+      "synthetic_only": true
+    },
+    {
+      "id": "Z03",
+      "environment": "azure",
+      "title": "Managed HSM module certificate assessment",
+      "assertion_or_oracle": "Exact official CMVP validation and operational-context confidence",
+      "limitation_or_negative_control": "No blanket subscription-level FIPS claim",
+      "status": "specified_not_executed",
+      "authorization_required": true,
+      "synthetic_only": true
+    },
+    {
+      "id": "Z04",
+      "environment": "azure",
+      "title": "Certificate rotation/CBOM drift",
+      "assertion_or_oracle": "Observe replacement and affected applications/data flows",
+      "limitation_or_negative_control": "Schema and evidence provenance checked",
+      "status": "specified_not_executed",
+      "authorization_required": true,
+      "synthetic_only": true
+    }
+  ]
+}
