@@ -1,0 +1,5 @@
+# Optional local-only API starter; not yet integrated into uv.lock.
+# Use with uv run --no-sync --with-requirements requirements/platform-dev.txt.
+fastapi==0.128.2
+uvicorn==0.48.0
+httpx==0.28.1
