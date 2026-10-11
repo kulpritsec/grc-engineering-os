@@ -56,7 +56,7 @@ uv sync --locked
 uv run pytest -q tests/test_assurance.py
 ```
 
-The evaluator currently trusts the **caller's assertion of scope** and only checks **local byte consistency**. It does not authenticate collectors, prove custody, issue regulatory compliance certifications, run active scans, or provide an evidence vault/web UI. These are planned downstream gates, not existing capabilities.
+The evaluator currently trusts the **caller's assertion of scope** and checks **local byte consistency**. Local Vault storage and publication history are implemented below. Optional signed manifests record separate collection-statement authentication; they do not upgrade CVP verdicts. Production custody, regulatory certification, active scanners and a unified operator UI remain future work.
 
 ## Local Evidence Vault — next foundation
 
@@ -105,6 +105,16 @@ uv run grcctl assurance journal-verify --vault-root evidence/vault
 This is **local inconsistency detection**, not digital signing, trusted custody
 or independent anti-rollback protection. See
 [Local Publication Journal](docs/LOCAL_PUBLICATION_JOURNAL.md).
+
+## Signed collection statements (development)
+
+`grcctl manifest verify` checks portable signed manifests against an explicitly
+supplied collector trust policy, expected execution context, artifact bytes and
+verification time. `manifest link` records authentication beside existing Vault
+evidence and optional publications without changing their verdicts.
+`manifest demo` creates synthetic data and an ephemeral key for local validation.
+See [Signed Evidence Manifests](docs/SIGNED_EVIDENCE_MANIFESTS.md) for the approved
+trust model, reproduction commands, replay boundaries and failure cases.
 
 ## Requirements
 

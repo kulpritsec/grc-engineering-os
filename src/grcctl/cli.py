@@ -7,6 +7,7 @@ from rich.table import Table
 
 from .doctor import collect_doctor, human_bytes
 from .evidence import verify_evidence_file
+from .manifests.cli import app as manifest_app
 
 app = typer.Typer(
     name="grcctl",
@@ -22,6 +23,8 @@ evidence_app = typer.Typer(
 app.add_typer(evidence_app, name="evidence")
 
 console = Console()
+
+app.add_typer(manifest_app, name="manifest")
 
 OutputPath = Annotated[
     Path,

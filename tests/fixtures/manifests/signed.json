@@ -1,0 +1,24 @@
+{
+  "payload": {
+    "schema_version": "1",
+    "algorithm": "Ed25519",
+    "purpose": "evidence-collection",
+    "manifest_id": "22222222-2222-4222-8222-222222222222",
+    "execution_id": "synthetic-execution",
+    "collector_id": "synthetic-collector",
+    "collector_version": "fixture-1",
+    "key_id": "RFC8032-TEST-ONLY",
+    "scope": "sandbox",
+    "collected_at": "2026-10-10T12:00:00Z",
+    "artifacts": [
+      {
+        "artifact_id": "11111111-1111-4111-8111-111111111111",
+        "kind": "test-result",
+        "sha256": "18c4f85a180cf29ddc1f8e3a3143ff54d643d1c306dbe610f4f70482632071d4",
+        "size_bytes": 10
+      }
+    ],
+    "assessment": null
+  },
+  "signature": "a26a17836d71861c685ad0330b207c04cada80a123a4331e73df88cd67303c6789834e9af3b43d1a6d30601fbf0329490ee5dc1495015115220cfa63dd0d4401"
+}

@@ -5,6 +5,7 @@ description = "Debian-based GRC engineering and executable-assurance platform."
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "cryptography>=50.0.0,<51",
     "psutil>=7.2.2",
     "pydantic>=2.13.4",
     "pyyaml>=6.0.3",

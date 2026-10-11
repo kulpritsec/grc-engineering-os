@@ -1,0 +1,18 @@
+{
+  "schema_version": "1",
+  "updated_at": "2026-10-10T00:00:00Z",
+  "expires_at": "2026-10-11T00:00:00Z",
+  "max_collection_age_seconds": 3600,
+  "anchors": [
+    {
+      "collector_id": "synthetic-collector",
+      "key_id": "RFC8032-TEST-ONLY",
+      "public_key": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
+      "purpose": "evidence-collection",
+      "scopes": ["sandbox"],
+      "valid_from": "2026-10-10T00:00:00Z",
+      "valid_until": "2026-10-11T00:00:00Z",
+      "revoked": false
+    }
+  ]
+}
