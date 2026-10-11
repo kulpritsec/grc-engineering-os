@@ -10,6 +10,7 @@ from pathlib import Path
 import psutil
 
 from .models import DoctorEvidence, PlatformInfo, ResourceInfo, ToolStatus
+from .version import __version__
 
 
 def read_os_release() -> dict[str, str]:
@@ -130,7 +131,7 @@ def collect_doctor(output_path: Path) -> DoctorEvidence:
         ready=ready,
         provenance={
             "collector": "grcctl-doctor",
-            "collector_version": "0.1.0",
+            "collector_version": __version__,
         },
     )
 

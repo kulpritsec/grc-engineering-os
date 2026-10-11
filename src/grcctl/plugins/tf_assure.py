@@ -11,6 +11,7 @@ from ..models import (
     ScanSummary,
     TerraformScanEvidence,
 )
+from ..version import __version__
 
 JsonObject = dict[str, Any]
 
@@ -295,7 +296,7 @@ def scan_terraform_plan(
         plan_format_version=format_version,
         scanner={
             "name": "grcctl-tf-assure",
-            "version": "0.1.0",
+            "version": __version__,
         },
         summary=ScanSummary(
             resources_scanned=len(resources),
