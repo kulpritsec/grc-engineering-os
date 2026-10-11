@@ -260,3 +260,10 @@ class LocalEvidenceVault:
         artifact = self.get(artifact_id)
         status, detail = self._inspect_object(artifact.sha256, artifact.size_bytes)
         return VaultCheck(artifact_id, artifact.sha256, status, detail)
+
+    def artifact_path(self, artifact_id: str) -> Path:
+        """Resolve a retained record for independent byte verification.
+
+        This path is not an integrity result; the caller must verify the bytes.
+        """
+        return self._object_path(self.get(artifact_id).sha256)

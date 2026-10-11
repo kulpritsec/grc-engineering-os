@@ -15,6 +15,7 @@ from pydantic import ValidationError
 from ..evidence import verify_evidence_file
 from ..vault import LocalEvidenceVault, VaultError
 from .engine import evaluate_assessment
+from .journal import JournalCheck, append_publication, create_journal, verify_journal
 from .models import AssessmentInput, AssessmentReport
 
 
@@ -87,6 +88,7 @@ class LocalAssuranceCatalog:
                 "CREATE INDEX IF NOT EXISTS idx_links_artifact "
                 "ON assessment_evidence_links(artifact_id)"
             )
+            create_journal(db)
 
     def publish(self, report_path: Path) -> AssessmentPublication:
         """Reassess stored evidence before recording an immutable-in-API run."""
@@ -143,6 +145,12 @@ class LocalAssuranceCatalog:
             report_sha256=stored.sha256,
         )
         with self.vault._connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            if not verify_journal(db).valid:
+                raise CatalogError(
+                    "Existing publication journal is inconsistent; "
+                    "refusing to extend it."
+                )
             db.execute(
                 """
                 INSERT INTO assessment_publications (
@@ -162,7 +170,18 @@ class LocalAssuranceCatalog:
                     publication.report_sha256,
                 ),
             )
+            links: list[dict[str, str]] = []
             for evidence in report.evidence:
+                if evidence.vault_artifact_id is None:
+                    raise CatalogError("Published evidence must have a Vault ID.")
+                links.append(
+                    {
+                        "evidence_id": evidence.id,
+                        "artifact_id": evidence.vault_artifact_id,
+                        "kind": evidence.kind,
+                        "sha256": evidence.sha256,
+                    }
+                )
                 db.execute(
                     """
                     INSERT INTO assessment_evidence_links (
@@ -177,7 +196,18 @@ class LocalAssuranceCatalog:
                         evidence.sha256,
                     ),
                 )
+            append_publication(
+                db,
+                publication_id=publication.publication_id,
+                report_sha256=publication.report_sha256,
+                links=links,
+            )
         return publication
+
+    def journal_status(self) -> JournalCheck:
+        """Detect inconsistencies in local publication/relationship metadata."""
+        with self.vault._connect() as db:
+            return verify_journal(db)
 
     def history(
         self, procedure_id: str, limit: int = 100
