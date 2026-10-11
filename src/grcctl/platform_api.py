@@ -73,7 +73,12 @@ def health() -> dict[str, str]:
 def modules() -> dict[str, Any]:
     """Advertise actual components separately from planned modules."""
     return {
-        "available": ["grcctl", "cvp-contracts", "cvp-local-evaluator"],
+        "available": [
+            "grcctl",
+            "cvp-contracts",
+            "cvp-local-evaluator",
+            "local-evidence-vault-cli",
+        ],
         "planned": [
             "evidence-vault",
             "grcml-studio",

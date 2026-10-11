@@ -58,6 +58,20 @@ uv run pytest -q tests/test_assurance.py
 
 The evaluator currently trusts the **caller's assertion of scope** and only checks **local byte consistency**. It does not authenticate collectors, prove custody, issue regulatory compliance certifications, run active scans, or provide an evidence vault/web UI. These are planned downstream gates, not existing capabilities.
 
+## Local Evidence Vault — next foundation
+
+The `grcctl vault` commands preserve synthetic local artifacts in a private,
+content-addressed file store with SQLite metadata and integrity verification.
+This is **development-only** storage: the hash is not an origin signature,
+there is no login or immutable retention, and no real sensitive records should
+be ingested. See [Local Evidence Vault](docs/LOCAL_EVIDENCE_VAULT.md).
+
+```bash
+uv run grcctl vault ingest synthetic-observation.txt --kind test-result
+uv run grcctl vault list
+uv run grcctl vault verify <ARTIFACT-UUID>
+```
+
 ## Requirements
 
 - Debian GNU/Linux 13 or another supported Linux environment

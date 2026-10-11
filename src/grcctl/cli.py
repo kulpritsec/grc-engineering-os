@@ -241,3 +241,82 @@ def assurance_evaluate(
     console.print(
         "[dim]Hash consistency is not proof of origin or organizational compliance.[/dim]"
     )
+
+
+vault_app = typer.Typer(
+    help="Store and check local, content-addressed evidence (development only).",
+    no_args_is_help=True,
+)
+app.add_typer(vault_app, name="vault")
+
+
+@vault_app.command("ingest")
+def vault_ingest(
+    source: Annotated[Path, typer.Argument(help="Local regular file to preserve.")],
+    kind: Annotated[str, typer.Option("--kind")] = "technical-artifact",
+    root: Annotated[Path, typer.Option("--root")] = Path("evidence/vault"),
+) -> None:
+    """Preserve source bytes and unverified operator metadata in a local vault."""
+    from .vault import LocalEvidenceVault, VaultError
+
+    try:
+        record = LocalEvidenceVault(root).ingest(source, kind=kind)
+    except (VaultError, OSError) as exc:
+        console.print(f"[red]Vault ingestion error: {exc}[/red]")
+        raise typer.Exit(code=2) from exc
+    console.print("[green]STORED[/green] — locally, not source-attested")
+    console.print(f"Artifact ID: {record.artifact_id}")
+    console.print(f"SHA-256: {record.sha256}")
+    console.print(f"Bytes: {record.size_bytes}")
+
+
+@vault_app.command("verify")
+def vault_verify(
+    artifact_id: Annotated[str, typer.Argument(help="Vault artifact UUID.")],
+    root: Annotated[Path, typer.Option("--root")] = Path("evidence/vault"),
+) -> None:
+    """Compare stored artifact bytes with their recorded SHA-256 digest."""
+    from .vault import LocalEvidenceVault, VaultError
+
+    try:
+        result = LocalEvidenceVault(root).verify(artifact_id)
+    except (VaultError, OSError) as exc:
+        console.print(f"[red]Vault verification error: {exc}[/red]")
+        raise typer.Exit(code=2) from exc
+
+    console.print(f"Artifact: {result.artifact_id}")
+    console.print(f"Integrity: {result.status.upper()}")
+    console.print(f"Detail: {result.detail}")
+    console.print("[dim]This is a local integrity check, not provenance proof.[/dim]")
+    if not result.valid:
+        raise typer.Exit(code=1)
+
+
+@vault_app.command("list")
+def vault_list(
+    root: Annotated[Path, typer.Option("--root")] = Path("evidence/vault"),
+    limit: Annotated[int, typer.Option("--limit")] = 20,
+) -> None:
+    """List locally preserved artifact metadata without exposing contents."""
+    from .vault import LocalEvidenceVault, VaultError
+
+    try:
+        artifacts = LocalEvidenceVault(root).list_artifacts(limit=limit)
+    except (VaultError, OSError) as exc:
+        console.print(f"[red]Vault listing error: {exc}[/red]")
+        raise typer.Exit(code=2) from exc
+
+    table = Table(title="Kulprit Local Evidence Vault")
+    table.add_column("Artifact ID")
+    table.add_column("Kind")
+    table.add_column("Filename")
+    table.add_column("SHA-256 (prefix)")
+    for artifact in artifacts:
+        table.add_row(
+            artifact.artifact_id,
+            artifact.kind,
+            artifact.filename,
+            artifact.sha256[:12],
+        )
+    console.print(table)
+    console.print(f"{len(artifacts)} local ingestion records")
