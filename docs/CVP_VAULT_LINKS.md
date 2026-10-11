@@ -83,4 +83,4 @@ The suite tests successful Vault references after deleting original source files
 
 ## Next integration gate
 
-We are not yet writing a persistent graph index of **which assessments referenced which Vault artifacts**. G2 should introduce an append-only, authenticated assessment publication transaction with stable control IDs, collector identity, retained source evidence, signed manifest, timestamp and reviewer approval. A read-only relationship graph can then be built from verified persisted assessment records, rather than a mutable local JSON report. Avoid adding unrestricted HTTP upload until access controls are implemented.
+Persistent assessment/evidence relationships and a local publication journal are implemented; see [Assurance History](ASSURANCE_HISTORY.md) and [Local Publication Journal](LOCAL_PUBLICATION_JOURNAL.md). Development [Signed Evidence Manifests](SIGNED_EVIDENCE_MANIFESTS.md) add collection-statement authentication alongside these records without changing CVP verdicts. Independent custody, trusted time and reviewer acceptance remain future gates. Avoid adding unrestricted HTTP upload until access controls are implemented.
