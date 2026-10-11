@@ -33,7 +33,7 @@ Unified UI (future React) → Platform API (future FastAPI)
               Scout | TraceSentinel | Crypto | Adversary
 ```
 
-**Current implementation** (this branch): `grcctl` baseline/Terraform assessments, hash verification, and the first `grcctl assurance evaluate` CVP contract. There is **no** web app, orchestration service, evidence vault, ontology reasoner, cloud agent, active network scanning or continuous scheduler yet.
+**Current implementation** (this branch): `grcctl` baseline/Terraform assessments, hash verification, CVP evaluation, local Evidence Vault, publication history/journal, separate signed collection-manifest verification and an unauthenticated FastAPI structural preflight starter. There is no unified operator web app, orchestration service, ontology reasoner, cloud agent, active network scanning or continuous scheduler yet. See [Signed Evidence Manifests](SIGNED_EVIDENCE_MANIFESTS.md) for the development trust decision and production boundaries.
 
 ## Canonical entities (target data model, not all implemented)
 
@@ -52,7 +52,7 @@ Identifiers and versions are first class. Prefer relations to copying objects; i
 
 ## Evidence trust boundaries
 
-**Current alpha:** the CVP evaluator reads **only local file paths within the input workspace**, computes SHA-256, checks that referenced artifact bytes match the supplied digests, checks declared test coverage and determines a limited claim verdict. **Caller-declared scope is not independently authorized, the artifact origin is not attested, and the evidence file hash is not a digital signature.** A locally supported `verified` verdict must never be displayed as FIPS certification or organization-wide regulatory compliance.
+**Current alpha:** the CVP evaluator reads local file paths within the input workspace or resolves retained Vault ingestion UUIDs, checks SHA-256 and declared test coverage, and determines a limited claim verdict. Optional signed manifests separately authenticate collection statements against explicitly supplied external trust policy; CVP verdicts do not require or inherit that status. **Caller-declared scope is not independently authorized, observation truth is not attested, and a file hash is not a digital signature.** A locally supported `verified` verdict must never be displayed as FIPS certification or organization-wide regulatory compliance.
 
 **Target maturity:** collector identities, signed manifests, trusted time sources, immutable/WORM-enabled storage, independent verification API, legal holds, per-object access policy, explicit evidence aging and revocation of stale assessments.
 

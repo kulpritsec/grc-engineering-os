@@ -59,7 +59,7 @@ and deterministic assessment logic.</p>
 <a href="/v1/modules">Module roadmap</a> |
 <a href="/v1/assurance/schema">CVP input schema</a></p></section>
 <small>Development only. No authentication, remote scanners,
-persistent Evidence Vault, or live compliance conclusions.</small>
+HTTP Evidence Vault access, or live compliance conclusions.</small>
 </body></html>"""
 
 
