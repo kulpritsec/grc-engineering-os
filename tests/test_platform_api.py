@@ -92,3 +92,21 @@ def test_schema_validation_rejects_missing_procedure() -> None:
     payload.pop("procedure")
     response = client.post("/v1/assurance/preflight", json=payload)
     assert response.status_code == 422
+
+
+def test_preflight_accepts_vault_reference_without_verifying_source() -> None:
+    payload = _payload()
+    payload["evidence"][0].pop("relative_path")
+    payload["evidence"][0]["vault_artifact_id"] = "synthetic-vault-uuid"
+    response = client.post("/v1/assurance/preflight", json=payload)
+    assert response.status_code == 200
+    assert response.json()["structurally_ready"] is True
+    assert "verdict" not in response.json()
+    assert any("not verified" in item for item in response.json()["limitations"])
+
+
+def test_preflight_rejects_ambiguous_evidence_source() -> None:
+    payload = _payload()
+    payload["evidence"][0]["vault_artifact_id"] = "synthetic-vault-uuid"
+    response = client.post("/v1/assurance/preflight", json=payload)
+    assert response.status_code == 422

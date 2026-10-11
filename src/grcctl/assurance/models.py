@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 ObservationOutcome = Literal["pass", "fail", "unknown"]
 AssuranceVerdict = Literal["verified", "failed", "inconclusive", "not_tested"]
@@ -19,10 +19,21 @@ class ControlVerificationProcedure(BaseModel):
 
 
 class ArtifactReference(BaseModel):
+    """One evidence identity bound to either a local file or a vault record."""
+
     id: str = Field(min_length=1)
     kind: str = Field(min_length=1)
-    relative_path: str = Field(min_length=1)
     sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    relative_path: str | None = Field(default=None, min_length=1)
+    vault_artifact_id: str | None = Field(default=None, min_length=1)
+
+    @model_validator(mode="after")
+    def exactly_one_source(self) -> "ArtifactReference":
+        if (self.relative_path is None) == (self.vault_artifact_id is None):
+            raise ValueError(
+                "Provide exactly one of relative_path or vault_artifact_id."
+            )
+        return self
 
 
 class Observation(BaseModel):
