@@ -56,7 +56,7 @@ uv sync --locked
 uv run pytest -q tests/test_assurance.py
 ```
 
-The evaluator currently trusts the **caller's assertion of scope** and checks **local byte consistency**. Local Vault storage and publication history are implemented below. Optional signed manifests record separate collection-statement authentication; they do not upgrade CVP verdicts. Production custody, regulatory certification, active scanners and a unified operator UI remain future work.
+The evaluator currently trusts the **caller's assertion of scope** and checks **local byte consistency**. A `verified` or `failed` verdict also requires a procedure freshness policy and evidence within it; stale, undated or contradictory evidence is `inconclusive`. See [Evidence Freshness](docs/EVIDENCE_FRESHNESS.md). Local Vault storage and publication history are implemented below. Optional signed manifests record separate collection-statement authentication; they do not upgrade CVP verdicts. Production custody, regulatory certification, active scanners and a unified operator UI remain future work.
 
 ## Local Evidence Vault — next foundation
 

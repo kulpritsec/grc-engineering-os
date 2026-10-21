@@ -4,6 +4,14 @@ All notable changes to GRC Engineering OS are documented here.
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking:** CVP `verified` and `failed` verdicts now require a procedure `max_evidence_age_seconds` policy and evidence `collected_at` times within it; stale, undated or contradictory evidence yields `inconclusive`
+- CVP reports (schema `0.2.0`) record per-evidence `freshness_checks`
+- `grcctl assurance publish` rechecks freshness at publication time and refuses evidence that aged out
+- API preflight reports missing freshness policy and undated evidence
+- `grcctl vault ingest` prints the host ingestion time
+
 ### Planned
 
 - External policy packs

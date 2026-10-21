@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -34,6 +35,7 @@ def create_case(tmp_path: Path, *, outcome: str = "pass"):
             "scope": "isolated test network",
             "required_check_ids": ["deny-access"],
             "required_evidence_kinds": ["test-result"],
+            "max_evidence_age_seconds": 86400,
         },
         "observations": [
             {"check_id": "deny-access", "outcome": outcome, "evidence_ids": ["EV-1"]}
@@ -44,6 +46,7 @@ def create_case(tmp_path: Path, *, outcome: str = "pass"):
                 "kind": "test-result",
                 "vault_artifact_id": artifact.artifact_id,
                 "sha256": artifact.sha256,
+                "collected_at": artifact.ingested_at,
             }
         ],
         "scope_confirmed": True,
@@ -146,6 +149,7 @@ def test_mixed_local_and_vault_evidence(tmp_path: Path) -> None:
             "kind": "test-result",
             "relative_path": "second.txt",
             "sha256": hashlib.sha256(local.read_bytes()).hexdigest(),
+            "collected_at": datetime.now(UTC).isoformat(),
         }
     )
     data["observations"][0]["evidence_ids"].append("EV-2")

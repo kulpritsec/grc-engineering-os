@@ -28,7 +28,7 @@ uv run grcctl assurance evidence-usage <VAULT-INGESTION-UUID> \
 Publication:
 1. Rejects reports with invalid schema or canonical hash.
 2. Requires every referenced evidence artifact to be a persistent Vault UUID, rather than a volatile file path.
-3. Re-runs the deterministic CVP evaluator against the **current stored artifacts**, requires matching verdict and matching artifact checks.
+3. Re-runs the deterministic CVP evaluator against the **current stored artifacts** at the **publication time**, requires matching verdict, artifact checks and [evidence freshness](EVIDENCE_FRESHNESS.md). Evidence that aged out since evaluation is refused.
 4. Rejects missing, modified or inconsistent evidence. A genuine negative observation with intact evidence remains a **failed** conclusion and is retained.
 5. Stores a distinct ingestion of the report into the Vault and inserts a record for each evidence relationship into SQLite.
 

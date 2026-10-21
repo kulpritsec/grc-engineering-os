@@ -115,6 +115,12 @@ def cvp_preflight(payload: AssessmentInput) -> PreflightResult:
     if len(set(required)) != len(required):
         issues.append("Duplicate required check IDs.")
 
+    if payload.procedure.max_evidence_age_seconds is None:
+        issues.append("Procedure declares no evidence freshness policy.")
+    for item in payload.evidence:
+        if item.collected_at is None:
+            issues.append(f"Evidence {item.id} has no declared collection time.")
+
     for check_id in sorted(set(required) - set(observation_ids)):
         issues.append(f"Required observation missing: {check_id}.")
     for observation in payload.observations:
