@@ -19,7 +19,7 @@ uv run grcctl vault ingest synthetic-test-result.txt --kind test-result
 uv run grcctl vault list
 ```
 
-Copy the **Artifact ID** and **SHA-256** shown by `vault ingest` into the CVP JSON below (replace placeholders):
+Copy the **Artifact ID**, **SHA-256** and **Ingested (host clock)** time shown by `vault ingest` into the CVP JSON below (replace placeholders). `collected_at` must not be later than ingestion; see [Evidence Freshness](EVIDENCE_FRESHNESS.md). Evaluate within the 24-hour policy window, or the verdict is `inconclusive`.
 
 ```json
 {
@@ -30,7 +30,8 @@ Copy the **Artifact ID** and **SHA-256** shown by `vault ingest` into the CVP JS
     "assertion": "A designated synthetic user was denied access",
     "scope": "isolated sandbox",
     "required_check_ids": ["deny-access"],
-    "required_evidence_kinds": ["test-result"]
+    "required_evidence_kinds": ["test-result"],
+    "max_evidence_age_seconds": 86400
   },
   "observations": [
     {"check_id": "deny-access", "outcome": "pass", "evidence_ids": ["EV-1"]}
@@ -40,7 +41,8 @@ Copy the **Artifact ID** and **SHA-256** shown by `vault ingest` into the CVP JS
       "id": "EV-1",
       "kind": "test-result",
       "vault_artifact_id": "PASTE-ARTIFACT-UUID",
-      "sha256": "PASTE-SHA256"
+      "sha256": "PASTE-SHA256",
+      "collected_at": "PASTE-INGESTED-TIME"
     }
   ],
   "scope_confirmed": true,
@@ -66,7 +68,7 @@ Each evidence reference must contain **exactly one** of:
 - `relative_path`: a file inside the assessment JSON workspace (legacy workflow, unchanged); or
 - `vault_artifact_id`: a stable UUID of a record in the configured Evidence Vault (new workflow).
 
-Both forms also require `id`, `kind`, and expected `sha256`. The schema rejects both/neither location types. References to missing Vaults, unknown IDs, mismatched kind/digest, tampered/missing object bytes or corrupt stores **cannot** contribute to a passing assessment.
+Both forms also require `id`, `kind`, and expected `sha256`, and need `collected_at` plus a procedure `max_evidence_age_seconds` to support `verified` or `failed`. The schema rejects both/neither location types. References to missing Vaults, unknown IDs, mismatched kind/digest, tampered/missing object bytes or corrupt stores **cannot** contribute to a passing assessment.
 
 The report retains the evidence IDs, Vault UUID, expected hash, checks performed, reasons, timestamps, and limitations. The existing `grcctl evidence verify` command checks the resulting report's canonical hash and Pydantic structure. This check remains byte integrity, not independently authenticated attestation.
 

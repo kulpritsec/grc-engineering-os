@@ -90,8 +90,19 @@ class LocalAssuranceCatalog:
             )
             create_journal(db)
 
-    def publish(self, report_path: Path) -> AssessmentPublication:
-        """Reassess stored evidence before recording an immutable-in-API run."""
+    def publish(
+        self, report_path: Path, *, at: datetime | None = None
+    ) -> AssessmentPublication:
+        """Reassess stored evidence before recording an immutable-in-API run.
+
+        Freshness is rechecked at publication time, not the report's
+        caller-controlled evaluation time, so evidence that aged out since
+        evaluation cannot be published under its earlier conclusion. ``at`` may
+        only move the check later than the host clock, never backdate it.
+        """
+        now = datetime.now(UTC)
+        if at is not None and (at.tzinfo is None or at < now):
+            raise CatalogError("Publication time must be timezone-aware and not past.")
         if report_path.is_symlink():
             raise CatalogError("Symbolic-link assessment reports are refused.")
         try:
@@ -118,7 +129,16 @@ class LocalAssuranceCatalog:
             scope_confirmed=report.scope_confirmed,
             coverage_complete=report.coverage_complete,
         )
-        current = evaluate_assessment(trial, report_path.parent, self.vault.root)
+        current = evaluate_assessment(trial, report_path.parent, self.vault.root, at=at)
+        # Byte changes keep their own errors below; this isolates time drift.
+        if (
+            current.artifact_checks == report.artifact_checks
+            and current.freshness_checks != report.freshness_checks
+        ):
+            raise CatalogError(
+                "Evidence freshness at publication differs from the report; "
+                "re-evaluate before publishing."
+            )
         if current.verdict != report.verdict:
             raise CatalogError("Stored assessment verdict differs from reevaluation.")
         if current.artifact_checks != report.artifact_checks:

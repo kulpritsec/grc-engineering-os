@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -31,6 +32,7 @@ def fixture_run(tmp_path: Path, *, outcome: str = "pass"):
             "scope": "sandbox",
             "required_check_ids": ["deny"],
             "required_evidence_kinds": ["test-result"],
+            "max_evidence_age_seconds": 86400,
         },
         "observations": [
             {"check_id": "deny", "outcome": outcome, "evidence_ids": ["EV-1"]}
@@ -41,6 +43,7 @@ def fixture_run(tmp_path: Path, *, outcome: str = "pass"):
                 "kind": "test-result",
                 "vault_artifact_id": stored.artifact_id,
                 "sha256": stored.sha256,
+                "collected_at": stored.ingested_at,
             }
         ],
         "scope_confirmed": True,
@@ -146,6 +149,7 @@ def test_source_report_must_be_valid_and_vault_backed(tmp_path: Path) -> None:
                         "scope": "sandbox",
                         "required_check_ids": ["test"],
                         "required_evidence_kinds": ["test-result"],
+                        "max_evidence_age_seconds": 86400,
                     },
                     "observations": [
                         {
@@ -160,6 +164,7 @@ def test_source_report_must_be_valid_and_vault_backed(tmp_path: Path) -> None:
                             "kind": "test-result",
                             "relative_path": "local.txt",
                             "sha256": hashlib.sha256(local.read_bytes()).hexdigest(),
+                            "collected_at": datetime.now(UTC).isoformat(),
                         }
                     ],
                     "scope_confirmed": True,

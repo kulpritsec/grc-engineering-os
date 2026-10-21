@@ -26,6 +26,7 @@ def _payload() -> dict[str, object]:
             "scope": "synthetic sandbox",
             "required_check_ids": ["deny"],
             "required_evidence_kinds": ["test-result"],
+            "max_evidence_age_seconds": 86400,
         },
         "observations": [
             {"check_id": "deny", "outcome": "pass", "evidence_ids": ["ev-1"]}
@@ -36,6 +37,7 @@ def _payload() -> dict[str, object]:
                 "kind": "test-result",
                 "relative_path": "test.txt",
                 "sha256": "0" * 64,
+                "collected_at": "2026-10-01T12:00:00Z",
             }
         ],
         "scope_confirmed": False,
@@ -108,5 +110,24 @@ def test_preflight_accepts_vault_reference_without_verifying_source() -> None:
 def test_preflight_rejects_ambiguous_evidence_source() -> None:
     payload = _payload()
     payload["evidence"][0]["vault_artifact_id"] = "synthetic-vault-uuid"
+    response = client.post("/v1/assurance/preflight", json=payload)
+    assert response.status_code == 422
+
+
+def test_preflight_flags_missing_freshness_inputs() -> None:
+    payload = _payload()
+    payload["procedure"].pop("max_evidence_age_seconds")
+    payload["evidence"][0].pop("collected_at")
+    response = client.post("/v1/assurance/preflight", json=payload)
+    assert response.status_code == 200
+    issues = response.json()["issues"]
+    assert response.json()["structurally_ready"] is False
+    assert "Procedure declares no evidence freshness policy." in issues
+    assert "Evidence ev-1 has no declared collection time." in issues
+
+
+def test_preflight_rejects_naive_collection_time() -> None:
+    payload = _payload()
+    payload["evidence"][0]["collected_at"] = "2026-10-01T12:00:00"
     response = client.post("/v1/assurance/preflight", json=payload)
     assert response.status_code == 422

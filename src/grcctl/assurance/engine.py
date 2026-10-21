@@ -2,7 +2,7 @@
 
 import hashlib
 import json
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from pydantic import ValidationError
@@ -14,6 +14,7 @@ from .models import (
     AssessmentInput,
     AssessmentReport,
     AssuranceVerdict,
+    FreshnessStatus,
 )
 
 
@@ -37,35 +38,89 @@ def _artifact_status(root: Path, relative_path: str, expected_hash: str) -> str:
 
 def _evidence_status(
     evidence: ArtifactReference, workspace: Path, vault_root: Path | None
-) -> str:
-    """Validate local bytes or resolve a specific vault record by UUID."""
+) -> tuple[str, str | None]:
+    """Validate local bytes or resolve a specific vault record by UUID.
+
+    Returns the byte status and, for vault records, the stored ingestion time.
+    """
     if evidence.relative_path is not None:
-        return _artifact_status(workspace, evidence.relative_path, evidence.sha256)
+        status = _artifact_status(workspace, evidence.relative_path, evidence.sha256)
+        return status, None
 
     if vault_root is None:
-        return "vault_not_configured"
+        return "vault_not_configured", None
 
     # Lookup must not silently initialize a new store at a misspelled location.
     if not vault_root.is_dir() or not (vault_root / "vault.db").is_file():
-        return "vault_missing"
+        return "vault_missing", None
 
     try:
         vault = LocalEvidenceVault(vault_root)
         artifact_id = evidence.vault_artifact_id
         if artifact_id is None:
-            return "invalid_source"
+            return "invalid_source", None
         record = vault.get(artifact_id)
         if record.sha256 != evidence.sha256 or record.kind != evidence.kind:
-            return "metadata_mismatch"
-        return vault.verify(record.artifact_id).status
+            return "metadata_mismatch", None
+        return vault.verify(record.artifact_id).status, record.ingested_at
     except (VaultError, OSError):
-        return "vault_reference_invalid"
+        return "vault_reference_invalid", None
+
+
+def _parse_ingested_at(value: str) -> datetime | None:
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError:
+        return None
+    return parsed if parsed.tzinfo is not None else None
+
+
+def _freshness_status(
+    evidence: ArtifactReference,
+    byte_status: str,
+    ingested_at: str | None,
+    max_age_seconds: int | None,
+    at: datetime,
+) -> FreshnessStatus:
+    """Bound evidence age by the earliest known collection or ingestion time.
+
+    Collection cannot follow ingestion, so an old ingestion proves staleness
+    regardless of a later declared collection time. Neither time is trusted.
+    """
+    if byte_status != "matched":
+        return "not_checked"
+    if max_age_seconds is None:
+        return "no_policy"
+    ingested = None
+    if ingested_at is not None:
+        ingested = _parse_ingested_at(ingested_at)
+        if ingested is None:
+            return "invalid_ingestion_time"
+    collected = evidence.collected_at
+    known = [value for value in (collected, ingested) if value is not None]
+    if any(value > at for value in known):
+        return "future_timestamp"
+    if collected is not None and ingested is not None and collected > ingested:
+        return "collected_after_ingestion"
+    if known and at - min(known) > timedelta(seconds=max_age_seconds):
+        return "stale"
+    if collected is None:
+        return "unknown_collection_time"
+    return "fresh"
 
 
 def evaluate_assessment(
-    assessment: AssessmentInput, workspace: Path, vault_root: Path | None = None
+    assessment: AssessmentInput,
+    workspace: Path,
+    vault_root: Path | None = None,
+    *,
+    at: datetime | None = None,
 ) -> AssessmentReport:
     """Verify a bounded assertion, never an organization's overall compliance."""
+    if at is None:
+        at = datetime.now(UTC)
+    elif at.tzinfo is None:
+        raise AssessmentInputError("Evaluation time must include a timezone.")
     reasons: list[str] = []
     ids = [artifact.id for artifact in assessment.evidence]
     checks = [observation.check_id for observation in assessment.observations]
@@ -77,10 +132,15 @@ def evaluate_assessment(
         assessment.procedure.required_check_ids
     ):
         raise AssessmentInputError("Required check IDs must be unique.")
-    artifact_status = {
-        evidence.id: _evidence_status(evidence, workspace, vault_root)
-        for evidence in assessment.evidence
-    }
+    max_age = assessment.procedure.max_evidence_age_seconds
+    artifact_status: dict[str, str] = {}
+    freshness: dict[str, str] = {}
+    for evidence in assessment.evidence:
+        status, ingested_at = _evidence_status(evidence, workspace, vault_root)
+        artifact_status[evidence.id] = status
+        freshness[evidence.id] = _freshness_status(
+            evidence, status, ingested_at, max_age, at
+        )
     evidence_by_id = {artifact.id: artifact for artifact in assessment.evidence}
     observations = {obs.check_id: obs for obs in assessment.observations}
 
@@ -88,19 +148,27 @@ def evaluate_assessment(
         reasons.append("Assessment scope was not confirmed by the caller.")
     if not assessment.coverage_complete:
         reasons.append("Assessment coverage is incomplete or unconfirmed.")
+    if max_age is None:
+        reasons.append(
+            "Procedure declares no evidence freshness policy; "
+            "freshness was not evaluated."
+        )
     for eid, status in artifact_status.items():
         if status != "matched":
             reasons.append(f"Evidence {eid}: {status}.")
+        elif freshness[eid] not in {"fresh", "no_policy"}:
+            reasons.append(f"Evidence {eid}: {freshness[eid]}.")
     verified_obs = []
     for observation in assessment.observations:
         referenced = observation.evidence_ids
         trusted = bool(referenced) and all(
-            artifact_status.get(ref) == "matched" for ref in referenced
+            artifact_status.get(ref) == "matched" and freshness.get(ref) == "fresh"
+            for ref in referenced
         )
         verified_obs.append((observation, trusted))
         if not trusted:
             reasons.append(
-                f"Observation {observation.check_id} lacks matching evidence."
+                f"Observation {observation.check_id} lacks matching, fresh evidence."
             )
 
     missing_checks = set(assessment.procedure.required_check_ids) - set(observations)
@@ -132,15 +200,18 @@ def evaluate_assessment(
             reasons.append("At least one observation is unknown.")
     else:
         verdict = "verified"
-        reasons.append("All required checks passed with matching local evidence.")
+        reasons.append(
+            "All required checks passed with matching, fresh local evidence."
+        )
 
     report = AssessmentReport(
         assessment_id=assessment.assessment_id,
-        evaluated_at=datetime.now(UTC),
+        evaluated_at=at,
         procedure=assessment.procedure,
         observations=assessment.observations,
         evidence=assessment.evidence,
         artifact_checks=artifact_status,
+        freshness_checks=freshness,
         scope_confirmed=assessment.scope_confirmed,
         coverage_complete=assessment.coverage_complete,
         verdict=verdict,
@@ -151,6 +222,10 @@ def evaluate_assessment(
                 "not source authenticity."
             ),
             "Caller-supplied scope confirmation is not an authorization mechanism.",
+            (
+                "Evidence age uses caller-declared collection and host ingestion "
+                "times; these are not trusted time sources."
+            ),
             (
                 "Verification applies only to the named assertion, checks "
                 "and time of evaluation."

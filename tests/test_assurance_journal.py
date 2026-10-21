@@ -28,6 +28,7 @@ def _demo(tmp_path: Path) -> tuple[LocalAssuranceCatalog, Path]:
             "scope": "test environment only",
             "required_check_ids": ["check"],
             "required_evidence_kinds": ["test-result"],
+            "max_evidence_age_seconds": 86400,
         },
         "observations": [
             {"check_id": "check", "outcome": "pass", "evidence_ids": ["E1"]}
@@ -37,6 +38,7 @@ def _demo(tmp_path: Path) -> tuple[LocalAssuranceCatalog, Path]:
                 "id": "E1",
                 "kind": "test-result",
                 "sha256": stored.sha256,
+                "collected_at": stored.ingested_at,
                 "vault_artifact_id": stored.artifact_id,
             }
         ],

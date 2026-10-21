@@ -1,5 +1,6 @@
 import hashlib
 import json
+from datetime import UTC, datetime
 
 import pytest
 from typer.testing import CliRunner
@@ -21,6 +22,7 @@ def make_case(tmp_path, *, outcome="pass", coverage=True, scope=True):
             "scope": "synthetic sandbox",
             "required_check_ids": ["deny_access"],
             "required_evidence_kinds": ["test-result"],
+            "max_evidence_age_seconds": 86400,
         },
         "observations": [
             {"check_id": "deny_access", "outcome": outcome, "evidence_ids": ["EV-1"]}
@@ -31,6 +33,7 @@ def make_case(tmp_path, *, outcome="pass", coverage=True, scope=True):
                 "kind": "test-result",
                 "relative_path": "observation.txt",
                 "sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
+                "collected_at": datetime.now(UTC).isoformat(),
             }
         ],
         "scope_confirmed": scope,

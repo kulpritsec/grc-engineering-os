@@ -123,6 +123,7 @@ def test_cli_ingest_list_verify_and_corruption_exit(tmp_path: Path) -> None:
     )
     assert command.exit_code == 0, command.output
     assert "STORED" in command.output
+    assert "Ingested (host clock):" in command.output
     artifact_id = LocalEvidenceVault(root).list_artifacts()[0].artifact_id
     listing = runner.invoke(app, ["vault", "list", "--root", str(root)])
     assert listing.exit_code == 0, listing.output

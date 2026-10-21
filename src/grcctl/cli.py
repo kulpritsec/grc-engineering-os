@@ -282,6 +282,8 @@ def assurance_evaluate(
     console.print(f"Scope: {report.procedure.scope}")
     for reason in report.reasons:
         console.print(f"- {reason}")
+    for evidence_id, status in report.freshness_checks.items():
+        console.print(f"Freshness {evidence_id}: {status}")
     console.print(f"Evidence record: {output}")
     console.print(f"SHA-256: {report.evidence_hash}")
     console.print(
@@ -314,6 +316,7 @@ def vault_ingest(
     console.print(f"Artifact ID: {record.artifact_id}")
     console.print(f"SHA-256: {record.sha256}")
     console.print(f"Bytes: {record.size_bytes}")
+    console.print(f"Ingested (host clock): {record.ingested_at}")
 
 
 @vault_app.command("verify")
