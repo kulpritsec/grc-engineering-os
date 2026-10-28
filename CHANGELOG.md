@@ -6,7 +6,7 @@ All notable changes to GRC Engineering OS are documented here.
 
 ### Added
 
-- Read-only local API `GET /v1/assurance/publications[/{id}]` and server-rendered `/operator` pages over published assessments; no writes, no source-evidence content, stored verdicts labeled as claims
+
 
 ### Changed
 

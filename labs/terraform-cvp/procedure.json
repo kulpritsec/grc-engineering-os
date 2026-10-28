@@ -1,0 +1,13 @@
+{
+  "id": "CVP-TF-BASELINE-001",
+  "title": "Synthetic Terraform plan baseline",
+  "assertion": "The planned AWS change exposes no administrative port to the internet, fully enables declared S3 public-access blocks and disables destructive bucket deletion.",
+  "scope": "labs/terraform-cvp synthetic plans",
+  "required_check_ids": [
+    "GRCOS-AWS-NET-001",
+    "GRCOS-AWS-S3-001",
+    "GRCOS-AWS-S3-003"
+  ],
+  "required_evidence_kinds": ["terraform-plan", "terraform-scan"],
+  "max_evidence_age_seconds": 31536000
+}
