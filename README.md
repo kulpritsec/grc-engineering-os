@@ -124,6 +124,14 @@ manifest links. Current byte/journal checks remain separate from stored verdicts
 and authentication claims. Missing references and bounded partial views are explicit.
 See [Evidence Relationships](docs/EVIDENCE_RELATIONSHIPS.md).
 
+## Read-only operator view (development)
+
+The optional local API serves `GET /v1/assurance/publications` and an
+`/operator` page over the Vault at `GRCOS_VAULT_ROOT`. Stored verdicts are shown
+as claims recorded at publication, alongside current byte integrity; only
+digest-verified assessment reports are served, never source evidence. Loopback
+only, unauthenticated. See [Assurance API](docs/ASSURANCE_API.md).
+
 ## Requirements
 
 - Debian GNU/Linux 13 or another supported Linux environment
