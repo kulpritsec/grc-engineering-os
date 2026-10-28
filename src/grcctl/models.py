@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -69,8 +70,17 @@ class ScanSummary(BaseModel):
     by_severity: dict[str, int]
 
 
+class RuleResult(BaseModel):
+    """Per-rule outcome; pass requires positive, fully known plan evidence."""
+
+    rule_id: str
+    outcome: Literal["pass", "fail", "unknown"]
+    resources_evaluated: list[str]
+    notes: list[str]
+
+
 class TerraformScanEvidence(BaseModel):
-    schema_version: str = "0.1.0"
+    schema_version: str = "0.2.0"
     assessment_type: str = "terraform-plan-assessment"
     collected_at: datetime
     input_path: str
@@ -79,4 +89,6 @@ class TerraformScanEvidence(BaseModel):
     scanner: dict[str, str]
     summary: ScanSummary
     findings: list[Finding]
+    # Absent from schema 0.1.0 evidence, which recorded findings only.
+    rule_results: list[RuleResult] = Field(default_factory=list)
     evidence_hash: str = Field(default="")

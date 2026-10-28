@@ -125,6 +125,8 @@ manifest links. Current byte/journal checks remain separate from stored verdicts
 and authentication claims. Missing references and bounded partial views are explicit.
 See [Evidence Relationships](docs/EVIDENCE_RELATIONSHIPS.md).
 
+
+
 ## Requirements
 
 - Debian GNU/Linux 13 or another supported Linux environment

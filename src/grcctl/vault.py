@@ -346,6 +346,36 @@ class LocalEvidenceVault:
         )
         return VaultCheck(artifact.artifact_id, artifact.sha256, status, detail)
 
+    def read_verified(
+        self, artifact: VaultArtifact, *, max_bytes: int
+    ) -> tuple[str, bytes | None]:
+        """Return stored bytes only if this single bounded read matches the record.
+
+        The status vocabulary matches ``verify_record``. Bytes are hashed from
+        the same read that is returned, so no second open can substitute them.
+        """
+        if artifact.size_bytes > max_bytes:
+            return "not_checked_budget", None
+        path = self._object_path(artifact.sha256)
+        if path.is_symlink() or any(parent.is_symlink() for parent in path.parents):
+            return "unsafe_store", None
+        if not path.exists():
+            return "missing", None
+        try:
+            fd = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+            with os.fdopen(fd, "rb") as handle:
+                if not stat.S_ISREG(os.fstat(handle.fileno()).st_mode):
+                    return "unsafe_store", None
+                data = handle.read(max_bytes + 1)
+        except OSError:
+            return "unsafe_store", None
+        if (
+            len(data) != artifact.size_bytes
+            or hashlib.sha256(data).hexdigest() != artifact.sha256
+        ):
+            return "hash_mismatch", None
+        return "matched", data
+
     def artifact_path(self, artifact_id: str) -> Path:
         """Resolve a retained record for independent byte verification.
 

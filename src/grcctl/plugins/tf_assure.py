@@ -8,6 +8,7 @@ from ..doctor import hash_payload
 from ..models import (
     ControlMapping,
     Finding,
+    RuleResult,
     ScanSummary,
     TerraformScanEvidence,
 )
@@ -23,6 +24,18 @@ PUBLIC_ACCESS_FLAGS = (
     "ignore_public_acls",
     "restrict_public_buckets",
 )
+
+RULE_IDS = (
+    "GRCOS-AWS-NET-001",
+    "GRCOS-AWS-S3-001",
+    "GRCOS-AWS-S3-002",
+    "GRCOS-AWS-S3-003",
+)
+# Ingress declared outside aws_security_group is not inspected by NET-001.
+STANDALONE_INGRESS_TYPES = {
+    "aws_security_group_rule",
+    "aws_vpc_security_group_ingress_rule",
+}
 
 
 class TerraformPlanError(ValueError):
@@ -255,6 +268,188 @@ def _scan_s3_buckets(resources: list[JsonObject]) -> list[Finding]:
     return findings
 
 
+def _after_unknown(resource: JsonObject) -> JsonObject:
+    change = resource.get("change", {})
+
+    if not isinstance(change, dict):
+        return {}
+
+    unknown = change.get("after_unknown", {})
+    return unknown if isinstance(unknown, dict) else {}
+
+
+def _has_unknown(value: object) -> bool:
+    """Terraform marks values known only after apply with nested ``true``."""
+    if value is True:
+        return True
+    if isinstance(value, dict):
+        return any(_has_unknown(item) for item in value.values())
+    if isinstance(value, list):
+        return any(_has_unknown(item) for item in value)
+    return False
+
+
+def _of_type(resources: list[JsonObject], resource_type: str) -> list[JsonObject]:
+    return [resource for resource in resources if resource.get("type") == resource_type]
+
+
+def _address(resource: JsonObject) -> str:
+    return str(resource.get("address", "unknown"))
+
+
+def _rule_result(
+    rule_id: str,
+    findings: list[Finding],
+    applicable: list[JsonObject],
+    undetermined: list[str],
+    pass_notes: list[str] | None = None,
+) -> RuleResult:
+    """Fail on any finding; pass only when every applicable value is known."""
+    evaluated = sorted(_address(resource) for resource in applicable)
+    failed = sorted({f.resource for f in findings if f.rule_id == rule_id})
+
+    if failed:
+        return RuleResult(
+            rule_id=rule_id,
+            outcome="fail",
+            resources_evaluated=evaluated,
+            notes=[f"Findings on: {', '.join(failed)}.", *undetermined],
+        )
+
+    if not applicable:
+        undetermined = ["No applicable resources in the plan.", *undetermined]
+
+    if undetermined:
+        return RuleResult(
+            rule_id=rule_id,
+            outcome="unknown",
+            resources_evaluated=evaluated,
+            notes=undetermined,
+        )
+
+    return RuleResult(
+        rule_id=rule_id,
+        outcome="pass",
+        resources_evaluated=evaluated,
+        notes=[
+            "Pass covers only the listed planned resources and known values.",
+            *(pass_notes or []),
+        ],
+    )
+
+
+def _undetermined_ingress(resource: JsonObject) -> list[str]:
+    address = _address(resource)
+
+    if _has_unknown(_after_unknown(resource).get("ingress")):
+        return [f"{address}: ingress is known only after apply."]
+
+    ingress_rules = _after(resource).get("ingress")
+
+    if not isinstance(ingress_rules, list):
+        return [f"{address}: ingress is not a known list."]
+
+    notes: list[str] = []
+
+    for ingress in ingress_rules:
+        if not isinstance(ingress, dict):
+            notes.append(f"{address}: ingress entry is not an object.")
+            continue
+
+        cidrs = ingress.get("cidr_blocks", [])
+        ipv6_cidrs = ingress.get("ipv6_cidr_blocks", [])
+
+        if not isinstance(cidrs, list) or not isinstance(ipv6_cidrs, list):
+            notes.append(f"{address}: ingress networks are not known lists.")
+            continue
+
+        if not {str(cidr) for cidr in cidrs + ipv6_cidrs} & PUBLIC_NETWORKS:
+            continue
+
+        protocol = ingress.get("protocol")
+
+        if not isinstance(protocol, str):
+            notes.append(f"{address}: public ingress protocol is not known.")
+        elif protocol.lower() in {"tcp", "6"} and not (
+            isinstance(ingress.get("from_port"), int)
+            and isinstance(ingress.get("to_port"), int)
+        ):
+            notes.append(f"{address}: public TCP ingress ports are not known.")
+
+    return notes
+
+
+def _rule_results(
+    resources: list[JsonObject], findings: list[Finding]
+) -> list[RuleResult]:
+    groups = _of_type(resources, "aws_security_group")
+    blocks = _of_type(resources, "aws_s3_bucket_public_access_block")
+    buckets = _of_type(resources, "aws_s3_bucket")
+
+    network_notes = [note for group in groups for note in _undetermined_ingress(group)]
+    standalone = sorted(
+        _address(resource)
+        for resource in resources
+        if resource.get("type") in STANDALONE_INGRESS_TYPES
+    )
+
+    if standalone:
+        network_notes.append(
+            f"Standalone ingress rules are not evaluated: {', '.join(standalone)}."
+        )
+
+    block_notes: list[str] = []
+
+    for block in blocks:
+        unknown = _after_unknown(block)
+        after = _after(block)
+        undetermined = [
+            flag
+            for flag in PUBLIC_ACCESS_FLAGS
+            if _has_unknown(unknown.get(flag)) or not isinstance(after.get(flag), bool)
+        ]
+
+        if undetermined:
+            block_notes.append(
+                f"{_address(block)}: not explicitly known: {', '.join(undetermined)}."
+            )
+
+    if len(buckets) > len(blocks):
+        block_notes.append(
+            f"{len(buckets)} bucket(s) but {len(blocks)} public access block(s)."
+        )
+
+    deletion_notes = [
+        f"{_address(bucket)}: force_destroy is not explicitly known."
+        for bucket in buckets
+        if _has_unknown(_after_unknown(bucket).get("force_destroy"))
+        or not isinstance(_after(bucket).get("force_destroy"), bool)
+    ]
+
+    return [
+        _rule_result("GRCOS-AWS-NET-001", findings, groups, network_notes),
+        _rule_result(
+            "GRCOS-AWS-S3-001",
+            findings,
+            blocks,
+            block_notes,
+            ["Bucket-to-block references are not resolved."],
+        ),
+        _rule_result(
+            "GRCOS-AWS-S3-002",
+            findings,
+            buckets,
+            [
+                (
+                    "Configuration-presence heuristic cannot positively verify "
+                    "per-bucket encryption."
+                )
+            ],
+        ),
+        _rule_result("GRCOS-AWS-S3-003", findings, buckets, deletion_notes),
+    ]
+
+
 def scan_terraform_plan(
     plan_path: Path,
     output_path: Path,
@@ -304,6 +499,7 @@ def scan_terraform_plan(
             by_severity=severity_counts,
         ),
         findings=findings,
+        rule_results=_rule_results(resources, findings),
     )
 
     hash_input = evidence.model_dump(

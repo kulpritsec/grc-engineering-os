@@ -88,6 +88,10 @@ uv run grcctl evidence verify evidence/terraform-assessment.json
 
 A successful verification demonstrates that the artifact is structurally valid and that its calculated hash matches its stored hash. It does not establish who created the evidence, prove the truth of the source plan, or replace digital signing, trusted timestamps, or independent attestation.
 
+## Per-rule results
+
+Scan evidence (schema `0.2.0`) also records a `pass`, `fail` or `unknown` outcome for every rule. Absence of a finding is not a pass: a rule passes only when applicable resources exist and every value it depends on is explicitly known. GRCOS-AWS-S3-002 never passes. See [Terraform CVP](TERRAFORM_CVP.md) for the exact conditions and the CVP bridge. The CLI's `Status: PASSED` line still means only that no findings were raised.
+
 ## Assessment boundaries
 
 The current scanner:

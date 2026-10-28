@@ -371,6 +371,58 @@ def vault_list(
     console.print(f"{len(artifacts)} local ingestion records")
 
 
+@assurance_app.command("terraform")
+def assurance_terraform(
+    plan: TerraformPlanPath,
+    procedure: Annotated[
+        Path,
+        typer.Option("--procedure", help="Operator-defined CVP procedure JSON."),
+    ],
+    output_dir: Annotated[
+        Path, typer.Option("--output-dir", help="Directory for scan, input, report.")
+    ] = Path("evidence/terraform-cvp"),
+    vault_root: Annotated[Path, typer.Option("--vault-root")] = Path("evidence/vault"),
+    assessment_id: Annotated[str | None, typer.Option("--assessment-id")] = None,
+    scope_confirmed: Annotated[
+        bool,
+        typer.Option("--scope-confirmed", help="Operator confirms assessed scope."),
+    ] = False,
+    coverage_complete: Annotated[
+        bool,
+        typer.Option("--coverage-complete", help="Operator confirms full coverage."),
+    ] = False,
+) -> None:
+    """Evaluate a CVP from a Terraform/OpenTofu plan scan (planned state only)."""
+    from .assurance.terraform import TerraformBridgeError, assess_terraform_plan
+
+    try:
+        result = assess_terraform_plan(
+            plan,
+            procedure,
+            output_dir,
+            vault_root,
+            assessment_id=assessment_id,
+            scope_confirmed=scope_confirmed,
+            coverage_complete=coverage_complete,
+        )
+    except TerraformBridgeError as exc:
+        console.print(f"[red]Terraform assessment refused: {exc}[/red]")
+        raise typer.Exit(code=2) from exc
+
+    report = result.report
+    console.print(f"Verdict: [bold]{report.verdict.upper()}[/bold]")
+    console.print(f"Procedure: {report.procedure.id}")
+    for rule in result.scan.rule_results:
+        console.print(f"{rule.rule_id}: {rule.outcome}")
+    for reason in report.reasons:
+        console.print(f"- {reason}")
+    console.print(f"Scan evidence: {result.scan_path}")
+    console.print(f"CVP report: {result.report_path}")
+    console.print(
+        "[dim]A plan describes intended configuration, not deployed resources.[/dim]"
+    )
+
+
 @assurance_app.command("publish")
 def assurance_publish(
     report_path: Annotated[Path, typer.Argument(help="Completed CVP report JSON.")],
