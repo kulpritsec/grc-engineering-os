@@ -38,7 +38,7 @@ flowchart LR
 | `grcctl scan terraform` | Assesses Terraform/OpenTofu JSON plans |
 | `--fail-on-findings` | Returns a nonzero exit code for CI enforcement |
 
-## Unified Platform Foundation (development branch)
+## Unified Platform Foundation
 
 The next architecture keeps GRC Engineering OS as **one modular platform**, not separate products stitched together after the fact. Its common assurance core connects control assertions, technical observations, evidence and bounded conclusions. Specialist Scout, Trace, Crypto and Audit Runner modules will use these common contracts.
 
@@ -46,6 +46,7 @@ The next architecture keeps GRC Engineering OS as **one modular platform**, not 
 - [Solo-founder agentic development operating procedure](docs/AGENTIC_DEVELOPMENT.md)
 - [Engineering Control Tower specification](docs/ENGINEERING_CONTROL_TOWER.md)
 - [Repository agent contribution rules](AGENTS.md)
+- [Capability inventory: implemented, partial and planned](docs/CAPABILITY_INVENTORY.md)
 
 The first executable foundation adds `grcctl assurance evaluate INPUT.json --output evidence/cvp-assessment.json`. Inputs identify a scoped Control Verification Procedure, required checks, actual observations and artifact references. Evidence files must live inside the input JSON's directory and have matching SHA-256 digests. The command returns a **bounded test assertion verdict** (`verified`, `failed`, `inconclusive`, or `not_tested`) with explicit limitations.
 
@@ -58,7 +59,7 @@ uv run pytest -q tests/test_assurance.py
 
 The evaluator currently trusts the **caller's assertion of scope** and checks **local byte consistency**. A `verified` or `failed` verdict also requires a procedure freshness policy and evidence within it; stale, undated or contradictory evidence is `inconclusive`. See [Evidence Freshness](docs/EVIDENCE_FRESHNESS.md). Local Vault storage and publication history are implemented below. Optional signed manifests record separate collection-statement authentication; they do not upgrade CVP verdicts. Production custody, regulatory certification, active scanners and a unified operator UI remain future work.
 
-## Local Evidence Vault — next foundation
+## Local Evidence Vault (development)
 
 The `grcctl vault` commands preserve synthetic local artifacts in a private,
 content-addressed file store with SQLite metadata and integrity verification.
@@ -243,7 +244,7 @@ GRC Engineering OS does not currently:
 - Prove organizational compliance
 - Replace professional control assessment or risk judgment
 - Guarantee that the absence of a finding means a resource is secure
-- Digitally sign evidence
+- Provide production evidence signing, custody or trusted time (signed collection-manifest verification is development-only)
 - Operate as a production-ready Linux distribution
 
 Findings are technical observations and candidate control mappings—not certifications or legal conclusions.

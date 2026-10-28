@@ -57,8 +57,10 @@ def test_landing_page_and_health() -> None:
 def test_module_inventory_does_not_claim_planned_are_live() -> None:
     response = client.get("/v1/modules")
     assert response.status_code == 200
-    assert "evidence-vault" in response.json()["planned"]
-    assert "evidence-vault" not in response.json()["available"]
+    body = response.json()
+    assert "authenticated-evidence-vault" in body["planned"]
+    assert "local-evidence-vault-cli" in body["available"]
+    assert not set(body["available"]) & set(body["planned"])
 
 
 def test_cvp_schema_exposes_contract() -> None:
