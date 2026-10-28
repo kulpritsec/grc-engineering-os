@@ -124,14 +124,7 @@ manifest links. Current byte/journal checks remain separate from stored verdicts
 and authentication claims. Missing references and bounded partial views are explicit.
 See [Evidence Relationships](docs/EVIDENCE_RELATIONSHIPS.md).
 
-## Terraform plans as CVP evidence (development)
 
-`grcctl assurance terraform PLAN.json --procedure CVP.json` scans a saved plan,
-retains the plan and scan evidence in the Vault and evaluates an operator-defined
-CVP from per-rule results. A rule passes only on fully known planned values;
-absent findings, computed values and unsupported resources stay `unknown`.
-Known-good, known-failure and unknown lab plans live in `labs/terraform-cvp`.
-See [Terraform CVP](docs/TERRAFORM_CVP.md).
 
 ## Requirements
 

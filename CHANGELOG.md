@@ -6,9 +6,7 @@ All notable changes to GRC Engineering OS are documented here.
 
 ### Added
 
-- `grcctl assurance terraform` evaluates an operator-defined CVP from a Terraform/OpenTofu plan scan, retaining plan and scan evidence in the Vault
-- Terraform scan evidence (schema `0.2.0`) records per-rule `pass`/`fail`/`unknown` results; absence of a finding is never a pass
-- Known-good, known-failure and unknown/unsupported synthetic plans in `labs/terraform-cvp`
+
 
 ### Changed
 

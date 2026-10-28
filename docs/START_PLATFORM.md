@@ -25,8 +25,10 @@ uv run --no-sync --with-requirements requirements/platform-dev.txt \
 
 Open `http://127.0.0.1:8080/` and `http://127.0.0.1:8080/docs`.
 The server exposes a landing page, health, module statuses, CVP JSON
-schema and structural CVP preflight. It **does not** run scanners from HTTP,
-store evidence or prove assessment claims.
+schema, structural CVP preflight and read-only views of published
+assessments (see [Assurance API](ASSURANCE_API.md)). It **does not** run
+scanners from HTTP, store evidence, serve source evidence or prove assessment
+claims.
 
 ## 3. Run focused API tests
 
