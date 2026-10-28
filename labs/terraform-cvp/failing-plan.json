@@ -1,0 +1,49 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.9.8",
+  "timestamp": "2026-10-28T12:00:00Z",
+  "resource_changes": [
+    {
+      "address": "aws_security_group.admin_open",
+      "type": "aws_security_group",
+      "change": {
+        "actions": ["create"],
+        "after": {
+          "ingress": [
+            {
+              "cidr_blocks": ["0.0.0.0/0"],
+              "ipv6_cidr_blocks": [],
+              "from_port": 22,
+              "to_port": 22,
+              "protocol": "tcp"
+            }
+          ]
+        },
+        "after_unknown": {"id": true}
+      }
+    },
+    {
+      "address": "aws_s3_bucket.evidence",
+      "type": "aws_s3_bucket",
+      "change": {
+        "actions": ["create"],
+        "after": {"bucket": "grcos-lab-evidence", "force_destroy": true},
+        "after_unknown": {"id": true}
+      }
+    },
+    {
+      "address": "aws_s3_bucket_public_access_block.evidence",
+      "type": "aws_s3_bucket_public_access_block",
+      "change": {
+        "actions": ["create"],
+        "after": {
+          "block_public_acls": false,
+          "block_public_policy": false,
+          "ignore_public_acls": false,
+          "restrict_public_buckets": false
+        },
+        "after_unknown": {"bucket": true}
+      }
+    }
+  ]
+}

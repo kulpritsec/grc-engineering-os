@@ -33,7 +33,7 @@ Unified UI (future React) → Platform API (future FastAPI)
               Scout | TraceSentinel | Crypto | Adversary
 ```
 
-**Current implementation** (this branch): `grcctl` baseline/Terraform assessments, hash verification, CVP evaluation, local Evidence Vault, publication history/journal, separate signed collection-manifest verification and an unauthenticated FastAPI structural preflight starter. There is no unified operator web app, orchestration service, ontology reasoner, cloud agent, active network scanning or continuous scheduler yet. See [Signed Evidence Manifests](SIGNED_EVIDENCE_MANIFESTS.md) for the development trust decision and production boundaries.
+**Current implementation** (this branch): `grcctl` baseline/Terraform assessments, a Terraform plan to CVP bridge with per-rule pass/fail/unknown results, hash verification, CVP evaluation, local Evidence Vault, publication history/journal, separate signed collection-manifest verification and an unauthenticated FastAPI structural preflight starter. There is no unified operator web app, orchestration service, ontology reasoner, cloud agent, active network scanning or continuous scheduler yet. See [Signed Evidence Manifests](SIGNED_EVIDENCE_MANIFESTS.md) for the development trust decision and production boundaries.
 
 ## Canonical entities (target data model, not all implemented)
 

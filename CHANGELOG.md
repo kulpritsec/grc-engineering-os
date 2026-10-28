@@ -4,6 +4,12 @@ All notable changes to GRC Engineering OS are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- `grcctl assurance terraform` evaluates an operator-defined CVP from a Terraform/OpenTofu plan scan, retaining plan and scan evidence in the Vault
+- Terraform scan evidence (schema `0.2.0`) records per-rule `pass`/`fail`/`unknown` results; absence of a finding is never a pass
+- Known-good, known-failure and unknown/unsupported synthetic plans in `labs/terraform-cvp`
+
 ### Changed
 
 - **Breaking:** CVP `verified` and `failed` verdicts now require a procedure `max_evidence_age_seconds` policy and evidence `collected_at` times within it; stale, undated or contradictory evidence yields `inconclusive`
