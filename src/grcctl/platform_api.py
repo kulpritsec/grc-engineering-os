@@ -87,14 +87,21 @@ def health() -> dict[str, str]:
 def modules() -> dict[str, Any]:
     """Advertise actual components separately from planned modules."""
     return {
+        # CLI-only development components; none is exposed over HTTP here.
         "available": [
             "grcctl",
             "cvp-contracts",
             "cvp-local-evaluator",
+            "evidence-freshness-gate",
+            "terraform-plan-scanner",
             "local-evidence-vault-cli",
+            "assurance-publication-history-cli",
+            "publication-journal-cli",
+            "signed-manifest-verification-cli",
+            "evidence-relationship-projection-cli",
         ],
         "planned": [
-            "evidence-vault",
+            "authenticated-evidence-vault",
             "grcml-studio",
             "kaeo",
             "scout",

@@ -10,7 +10,7 @@ Every Vault ingest produces a **stable UUID**, SHA-256 digest, declared evidence
 
 ## Reproducible local workflow
 
-Use the development branch `feature/cvp-vault-artifact-links` and synthetic data:
+From `main`, using synthetic data:
 
 ```bash
 uv sync --locked

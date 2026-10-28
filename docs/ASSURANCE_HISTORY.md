@@ -10,7 +10,7 @@ This provides the first persistence and search layer that can later project into
 
 ## How to use
 
-From `feature/assurance-history-catalog`, use the synthetic steps in
+From `main`, use the synthetic steps in
 [CVP Vault Links](CVP_VAULT_LINKS.md) to create `evidence/demo-cvp-evaluation.json`.
 
 ```bash

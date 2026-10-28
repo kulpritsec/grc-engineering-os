@@ -8,7 +8,7 @@ The unified GRC OS must be able to keep a test artifact after its source file ch
 
 The target enterprise interface will later support PostgreSQL metadata and S3-compatible locked object storage. SQLite and private local folders are an **interim implementation**, not a claim that the selected production database design has changed.
 
-## Local quick start (branch: feature/local-evidence-vault)
+## Local quick start
 
 ```bash
 uv sync --locked

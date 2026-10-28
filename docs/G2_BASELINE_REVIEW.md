@@ -1,5 +1,7 @@
 # G2 evidence trust baseline and proposed sprint
 
+> **Historical snapshot (October 10, 2026).** PRs #16–#20, #22, #25 and #27 have since merged into `main`, and some gaps below are closed (for example, evidence freshness). Treat this as the record of that review, not current status; see [Capability Inventory](CAPABILITY_INVENTORY.md).
+
 Date: October 10, 2026. Status: development contract approved by the project product owner in the Codex session; implementation and independent acceptance remain under review.
 
 The platform has a working local assurance and preservation foundation. Its next useful increment is a portable signed manifest verified against separately configured collector trust anchors. Existing byte checks and assessment verdicts must retain their current meaning. Signing authenticates a statement within an approved trust policy; it does not prove that an observation happened or that a control is effective.

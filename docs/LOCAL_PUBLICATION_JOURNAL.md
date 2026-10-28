@@ -18,7 +18,7 @@ The journal verifier recomputes the chain, detects gaps, and compares events wit
 
 ## Usage
 
-From branch `feature/assurance-publication-journal` after preparing the synthetic
+From `main`, after preparing the synthetic
 demo in [Assurance History](ASSURANCE_HISTORY.md):
 
 ```bash

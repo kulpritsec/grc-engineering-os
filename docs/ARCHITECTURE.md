@@ -33,7 +33,7 @@ Unified UI (future React) → Platform API (future FastAPI)
               Scout | TraceSentinel | Crypto | Adversary
 ```
 
-**Current implementation** (this branch): `grcctl` baseline/Terraform assessments, a Terraform plan to CVP bridge with per-rule pass/fail/unknown results, hash verification, CVP evaluation, local Evidence Vault, publication history/journal, separate signed collection-manifest verification and an unauthenticated FastAPI structural preflight starter. There is no unified operator web app, orchestration service, ontology reasoner, cloud agent, active network scanning or continuous scheduler yet. See [Signed Evidence Manifests](SIGNED_EVIDENCE_MANIFESTS.md) for the development trust decision and production boundaries.
+
 
 ## Canonical entities (target data model, not all implemented)
 
@@ -76,7 +76,7 @@ A specialized module does not own the final regulatory determination.
 ## First build gates
 
 **G0 architecture:** document key ADRs, risk boundaries, schema versioning and modular design.  
-**G1 executable CVP:** local file-backed verified/failed/inconclusive/not-tested fixtures; original file digests and output artifact verification. **In progress on this branch.**  
+**G1 executable CVP:** local file-backed verified/failed/inconclusive/not-tested fixtures; original file digests and output artifact verification. **Implemented on `main`.**  
 **G2 trusted evidence foundation:** restricted artifact upload, authenticated collector, signing, protected storage and verification, migration tests.  
 **G3 integrated vertical slice:** existing Terraform scanner mapped to CVP, simple API/UI, GRCML/KAEO projection, one explainable report.  
 **G4 controlled labs:** TraceSentinel/crypto local fault injection, AWS/Azure with approved budgets and teardown.  
@@ -95,4 +95,4 @@ Do not skip the evidence-trust gate before marketing an audit-grade product.
 - ADR-007: agentic development roles, budgets, review ownership and code provenance.
 - ADR-008: CVP assertion-verification semantics, including positive/negative fixtures and non-declarative scope authorization.
 
-Related designs on existing branches: `docs/tracesentinel-validation-labs.md` and `docs/k-caef-evaluation-framework.md`. These are not merged into this branch.
+Related designs on existing branches: `docs/tracesentinel-validation-labs.md` and `docs/k-caef-evaluation-framework.md`. These are not merged into `main`. See [Capability Inventory](CAPABILITY_INVENTORY.md) for current status.

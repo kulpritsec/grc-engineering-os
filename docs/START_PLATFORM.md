@@ -1,15 +1,13 @@
 # Start the Kulprit GRC Engineering OS development API
 
-**Status:** optional, local-only FastAPI starter on feature branch
-`feature/unified-platform-foundation`. Not a production backend.
+**Status:** optional, local-only FastAPI starter on `main`. Not a production
+backend.
 
 ## 1. Install the existing locked CLI dependencies
 
 ```bash
 git clone https://github.com/kulpritsec/grc-engineering-os.git
 cd grc-engineering-os
-git fetch origin
-git checkout feature/unified-platform-foundation
 uv sync --locked
 ```
 
