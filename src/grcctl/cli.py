@@ -5,6 +5,7 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
+from .defense.cli import defense_app
 from .doctor import collect_doctor, human_bytes
 from .evidence import verify_evidence_file
 from .manifests.cli import app as manifest_app
@@ -25,6 +26,7 @@ app.add_typer(evidence_app, name="evidence")
 console = Console()
 
 app.add_typer(manifest_app, name="manifest")
+app.add_typer(defense_app, name="defense")
 
 OutputPath = Annotated[
     Path,

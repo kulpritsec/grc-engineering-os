@@ -1,0 +1,2 @@
+{"timestamp":"2026-11-27T00:31:11.000+0000","id":"LAB-SYNTH-WZ-001","agent":{"id":"006","name":"metasploitable3-ub1404","ip":"192.168.77.20"},"rule":{"id":"5706","description":"SSH insecure connection attempt (scan)."},"data":{"srcip":"192.168.77.10"}}
+{"timestamp":"2026-11-27T00:31:14.000+0000","id":"LAB-SYNTH-WZ-002","agent":{"id":"006","name":"metasploitable3-ub1404","ip":"192.168.77.20"},"rule":{"id":"11201","description":"ProFTPD session opened."},"data":{"srcip":"192.168.77.10"}}

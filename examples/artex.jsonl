@@ -1,0 +1,1 @@
+{"timestamp":"2026-11-26T19:31:10-05:00","id":"LAB-SYNTH-001","kind":"execution","tool":"Bash","src_ip":"192.168.77.10","dest_ip":"192.168.77.20","requested_ports":[21,22,80,139,445,8080]}
